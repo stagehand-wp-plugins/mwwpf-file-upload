@@ -137,6 +137,8 @@ MW WP Form 5.2（2026年中にリリース予定）で `[mwform_file]` と `[mwf
 
 スラッグ `mwwpf-file-upload`、関数・オプション接頭辞 `mwwpf_`、クラス接頭辞 `MWWPF_` は確定済み。プラグインの表示名は環境準備 S2 の値を使う。
 
+クラスのファイル名は WordPress Coding Standards に合わせて `class-{クラス名を小文字・ハイフン区切り}.php`（例: `MWWPF_Plugin` → `class-mwwpf-plugin.php`）とし、1ファイル1クラスにする。
+
 本書で作るのはプラグイン本体のファイルのみ。`.wp-env.json`、`composer.json`、`package.json`、`bin/`、`.github/`、`tests/mu-plugins/`、`.distignore` などは環境準備で作成済み。
 
 ```
@@ -144,24 +146,26 @@ mwwpf-file-upload/
 ├── mwwpf-file-upload.php          # プラグインヘッダ、定数、ブートストラップ、更新チェック
 ├── uninstall.php
 ├── includes/
-│   ├── class-plugin.php          # 依存チェック、フック登録
-│   ├── class-form-scanner.php    # フォームID → 対象項目の一覧
-│   ├── class-storage.php         # 一時保存、トークン、メタデータ
-│   ├── class-ajax.php            # upload / delete / preview
-│   ├── class-mail.php            # メールタグ、添付
-│   ├── class-archive.php         # 送信済みファイルの保管（移動・一覧・削除）
-│   ├── class-admin-page.php      # 管理画面「添付ファイル」（一覧・ダウンロード・削除・設定）
-│   ├── class-admin-notice.php    # 保管場所が公開されている恐れがある場合の警告
-│   ├── class-cleanup.php         # WP-Cron
+│   ├── class-mwwpf-plugin.php          # 依存チェック、フック登録
+│   ├── class-mwwpf-form-scanner.php    # フォームID → 対象項目の一覧
+│   ├── class-mwwpf-storage.php         # 一時保存、トークン、メタデータ
+│   ├── class-mwwpf-ajax.php            # upload / delete / preview
+│   ├── class-mwwpf-mail.php            # メールタグ、添付
+│   ├── class-mwwpf-archive.php         # 送信済みファイルの保管（移動・一覧・削除）
+│   ├── class-mwwpf-admin-page.php      # 管理画面「添付ファイル」（一覧・ダウンロード・削除・設定）
+│   ├── class-mwwpf-admin-notice.php    # 保管場所が公開されている恐れがある場合の警告
+│   ├── class-mwwpf-cleanup.php         # WP-Cron
 │   ├── fields/
-│   │   ├── class-field-file.php  # [mwform_file] 置き換え
-│   │   └── class-field-image.php # [mwform_image] 置き換え（file を継承）
+│   │   ├── class-mwwpf-field-file.php  # [mwform_file] 置き換え
+│   │   └── class-mwwpf-field-image.php # [mwform_image] 置き換え（file を継承）
 │   └── validation/
-│       ├── class-rule-proxy.php  # 代理ルールの基底
-│       ├── class-rule-filetype.php
-│       ├── class-rule-filesize.php
-│       ├── class-rule-imagesize.php   # maxfilesize / minfilesize
-│       └── class-rule-noempty.php     # noempty / required
+│       ├── class-mwwpf-rule-proxy.php  # 代理ルールの基底
+│       ├── class-mwwpf-rule-filetype.php
+│       ├── class-mwwpf-rule-filesize.php
+│       ├── class-mwwpf-rule-maxfilesize.php
+│       ├── class-mwwpf-rule-minfilesize.php
+│       ├── class-mwwpf-rule-noempty.php
+│       └── class-mwwpf-rule-required.php
 ├── assets/
 │   ├── js/mwwpf.js
 │   └── css/mwwpf.css
@@ -175,7 +179,7 @@ mwwpf-file-upload/
 
 ## 6. コンポーネント仕様
 
-### 6.1 ブートストラップ（class-plugin.php）
+### 6.1 ブートストラップ（class-mwwpf-plugin.php）
 
 - `plugins_loaded` 優先度 20 で起動する。
 - `class_exists( 'MW_WP_Form_Abstract_Form_Field' )` と `class_exists( 'MW_WP_Form_Abstract_Validation_Rule' )` が false なら、管理画面に「MW WP Form が必要です」と通知して何もしない。
@@ -188,7 +192,7 @@ mwwpf-file-upload/
   - `wp_enqueue_scripts`: 対象項目を描画したときだけ JS と CSS を読み込む（項目の描画時にフラグを立て、`wp_footer` で enqueue）。
 - 項目オブジェクトとルールオブジェクトは1リクエストに1つずつ（使い回し）。
 
-### 6.2 フォームスキャナ（class-form-scanner.php）
+### 6.2 フォームスキャナ（class-mwwpf-form-scanner.php）
 
 - `get_fields( int $form_id ): array` → `[ 'attach' => [ 'type' => 'file', 'atts' => [...] ], 'photo' => [ 'type' => 'image', ... ] ]`
 - フォーム（投稿タイプ `mw-wp-form`）の `post_content` を `get_shortcode_regex( [ 'mwform_file', 'mwform_image' ] )` と `shortcode_parse_atts()` で解析する。
@@ -219,7 +223,7 @@ mwwpf-file-upload/
 - data 属性の上限サイズ・拡張子は §6.4 の「項目ごとの制限」を使う（クライアント側の事前チェック用。サーバ側でも必ず再検証する）。
 - 出力は全て `esc_attr` / `esc_html` でエスケープする。
 
-### 6.4 ストレージ（class-storage.php）
+### 6.4 ストレージ（class-mwwpf-storage.php）
 
 - 保管場所のルート: 定数 `MWWPF_STORAGE_DIR` があればそれを使い、なければ `wp_upload_dir()['basedir'] . '/mwwpf'`。配下に次の2つを作る。
   - `tmp/`: アップロード直後の一時ファイル（未送信）と、メール添付用のコピー（`send-*`）
@@ -229,7 +233,7 @@ mwwpf-file-upload/
     ```nginx
     location ^~ /wp-content/uploads/mwwpf/ { deny all; return 404; }
     ```
-- 公開の警告（class-admin-notice.php）: 次の両方を満たすとき、管理者に管理画面の通知（全画面）と「添付ファイル」画面上部の警告を出す。
+- 公開の警告（class-mwwpf-admin-notice.php）: 次の両方を満たすとき、管理者に管理画面の通知（全画面）と「添付ファイル」画面上部の警告を出す。
   - サーバが Nginx（`$_SERVER['SERVER_SOFTWARE']` に `nginx` を含む）、または `.htaccess` を解釈しないサーバ（`apply_filters( 'mwwpf_server_ignores_htaccess', ... )` で判定を上書きできる）
   - 保管場所のルートの `realpath` が `ABSPATH` の `realpath` の配下にある
   - 文言: 「添付ファイルの保管場所が公開ディレクトリ内にあり、このサーバでは .htaccess による保護が効きません。wp-config.php で MWWPF_STORAGE_DIR にドキュメントルート外のパスを指定するか、Nginx の設定で保管場所へのアクセスを拒否してください。」README の該当節へのリンクを付ける。
@@ -254,7 +258,7 @@ mwwpf-file-upload/
   - 設定がなければ既定値（§6.11）。
   - **filetype の指定があっても、§7 の拒否リストの拡張子は常に拒否する。**
 
-### 6.5 Ajax エンドポイント（class-ajax.php）
+### 6.5 Ajax エンドポイント（class-mwwpf-ajax.php）
 
 REST API ではなく `admin-ajax.php` を使う。未ログインの REST を遮断するセキュリティプラグインやサーバ設定の影響を避けるため。
 
@@ -307,7 +311,7 @@ REST API ではなく `admin-ajax.php` を使う。未ログインの REST を�
   - トークンが空の場合、`noempty` / `required` 以外は通す（本体と同じ挙動）
 - エラーメッセージは本体のルールと同じ文言・同じ `message` オプションに従う。
 
-### 6.8 メール（class-mail.php）
+### 6.8 メール（class-mwwpf-mail.php）
 
 `mwform_start_main_process` で受け取った `$form_key` ごとに登録する。
 
@@ -322,7 +326,7 @@ REST API ではなく `admin-ajax.php` を使う。未ログインの REST を�
 - 自動返信メールには添付しない。
 - PHPMailer で日本語ファイル名の添付が文字化けしないことを確認する（§9）。
 
-### 6.9 送信済みファイルの保管（class-archive.php）
+### 6.9 送信済みファイルの保管（class-mwwpf-archive.php）
 
 `mwform_after_send_{form_key}`（`$Data` のクローン）で実行する。全フォームが対象（本体の DB保存の設定に関係しない）。メディアライブラリには登録しない。
 
@@ -336,7 +340,7 @@ REST API ではなく `admin-ajax.php` を使う。未ログインの REST を�
 - `delete( $form_id, $token )`、`get_path( $form_id, $token )`（存在確認つき）を持つ。
 - メール送信が失敗した場合はこのフックが呼ばれない。一時ファイルは §6.10 の掃除で消える。
 
-### 6.10 掃除（class-cleanup.php）
+### 6.10 掃除（class-mwwpf-cleanup.php）
 
 - 有効化時に WP-Cron（毎時）を登録し、無効化時に解除する。
 - `tmp/`: 作成から `mwwpf_tmp_ttl`（既定 24時間）を過ぎた `.bin` / `.json`、消費済みのもの、ペアが欠けたもの、1時間以上前の `send-*` ディレクトリを削除する。
@@ -384,7 +388,7 @@ REST API ではなく `admin-ajax.php` を使う。未ログインの REST を�
 - 非公開リポジトリ用のトークンは設定しない（公開リポジトリが前提）。
 - `vendor/autoload.php` がない場合（開発中に `composer install` 前など）は、更新チェックだけを無効にしてプラグイン本体は動かす。
 
-### 6.14 管理画面「添付ファイル」（class-admin-page.php）
+### 6.14 管理画面「添付ファイル」（class-mwwpf-admin-page.php）
 
 - MW WP Form のメニュー（`edit.php?post_type=mw-wp-form`）の下に、サブメニュー「添付ファイル」を追加する。権限は `manage_options`（`apply_filters( 'mwwpf_admin_capability', 'manage_options' )`）。
 - 一覧は `WP_List_Table` を継承して作る。
