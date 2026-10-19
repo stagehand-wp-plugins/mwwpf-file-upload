@@ -1,0 +1,8 @@
+/vendor/
+/node_modules/
+/dist/
+/tests/fixtures/mw-wp-form/
+/test-results/
+/playwright-report/
+.wp-env.override.json
+.DS_Store
