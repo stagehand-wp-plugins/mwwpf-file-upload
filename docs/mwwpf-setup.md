@@ -228,7 +228,7 @@ Safari やコマンドラインで `plugins.localhost` が開けない場合は�
 
 開発環境のメールは Mailpit に送り、`http://mail.plugins.localhost` で確認する。テスト環境と CI は従来どおり mu-plugin のメール捕捉（§9.2）を使う。
 
-- Mailpit は `DEV_ROOT` 配下のプラグインで共通の1つを使う。場所: `/Users/kkazkeke/gdrive/@github/mailpit/docker-compose.yml`（SMTP は `127.0.0.1:1025` に公開、UI は Traefik の docker provider で `mail.plugins.localhost`）。起動していなければ `docker compose up -d` する。
+- Mailpit は `DEV_ROOT` 配下のプラグインで共通の1つを使う。場所: `/Users/kkazkeke/Developer/mailpit/docker-compose.yml`（SMTP は `127.0.0.1:1025` に公開、UI は Traefik の docker provider で `mail.plugins.localhost`）。起動していなければ `docker compose up -d` する。
 - `.wp-env.override.json` の development に次を追加する。メール捕捉を開発環境だけ無効にし、SMTP の宛先を指定する。
   ```json
   "MWWPF_DEV_SMTP_HOST": "host.docker.internal",
