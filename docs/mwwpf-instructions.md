@@ -2,6 +2,7 @@
 
 対象: Claude Code
 作成: 2026-10-19 / 調査対象: MW WP Form 5.1.8（GitHub `web-soudan/mw-wp-form` master, 2026-09-27）
+改訂: 2026-10-20 — §10 の回答を反映。DB保存（メディア登録）をやめ、送信済みファイルを非公開の保管場所に一定期間保管し、管理画面「添付ファイル」で一覧・削除する方式に変更（F6・F7・F10・F11、§6.4・§6.9〜§6.14 ほか）
 
 **前提:** 環境準備指示書 `docs/mwwpf-setup.md` が完了していること（`CLAUDE.md` の「環境準備」が「完了」）。開発フォルダ・wp-env・テストの土台・GitHub・CI・配布 zip の作り方は、全て環境準備指示書で用意済みとする。本書で「環境準備 §n」「環境準備 Sn」と書いた箇所は環境準備指示書を指す。
 
@@ -40,10 +41,12 @@ MW WP Form 5.2（2026年中にリリース予定）で `[mwform_file]` と `[mwf
 | F3 | 管理画面のバリデーション設定（filetype / filesize / maxfilesize / minfilesize / noempty / required）がそのまま効く |
 | F4 | 管理者宛メールに添付する。添付ファイル名は元のファイル名。自動返信メールには添付しない（本体と同じ） |
 | F5 | メール本文の `{x}` は元のファイル名に置換される |
-| F6 | 「問い合わせデータをデータベースに保存」がオンのとき、本体と同じ形式でメディアに登録し、問い合わせデータに紐付ける |
-| F7 | 本体フック `mwform_upload_dir_{form_key}` と `mwform_upload_filename_{form_key}` を、本体と同じ引数で適用する |
+| F6 | 送信済みのファイルは、全フォームで（本体の「問い合わせデータをデータベースに保存」の設定に関係なく）非公開の保管場所に保管する。メディアライブラリには登録しない（§6.9） |
+| F7 | 保管ファイルは保存期間（既定 30日、管理画面で変更可）を過ぎたら自動で削除する（§6.10） |
 | F8 | 管理画面のフォーム編集画面にあるタグ生成ダイアログから、従来どおり挿入できる |
 | F9 | `[mwform_image]` は入力画面と確認画面でサムネイルを表示する |
+| F10 | MW WP Form のメニューに「添付ファイル」画面を追加し、保管ファイルを一覧・ダウンロード・プレビュー・削除（個別・一括）できる。閲覧・操作は管理者のみ（§6.14） |
+| F11 | アップロードされたファイルは、一時ファイル・保管ファイルとも外部に公開しない。Nginx などで保管場所が公開ディレクトリ内にある場合は、管理画面で警告する（§6.4） |
 
 ### 2.2 非機能要件
 
@@ -60,6 +63,8 @@ MW WP Form 5.2（2026年中にリリース予定）で `[mwform_file]` と `[mwf
 - 1項目で複数ファイルを受け付けること（本体と同じく1項目1ファイル）
 - 本体で過去に保存された問い合わせデータ・添付の移行（本体の形式のまま残るので不要）
 - 本体の削除予告（admin notice）を消すこと
+- 添付ファイルのメディアライブラリへの登録と、本体の問い合わせデータ画面（一覧・詳細・CSV）での添付表示（2026-10-20 の決定でスコープ外。問い合わせデータにはファイル名だけが残る）
+- 本体フック `mwform_upload_dir_{form_key}` / `mwform_upload_filename_{form_key}` の適用（本体では DB保存時のメディア登録にだけ使われるフックのため）
 
 ---
 
@@ -81,9 +86,9 @@ MW WP Form 5.2（2026年中にリリース予定）で `[mwform_file]` と `[mwf
 | 12 | `classes/models/class.parser.php:311-325` | メールタグの値は `mwform_custom_mail_tag_{key}`（`$value, $name, $saved_mail_id`）を通る。DB保存時の値も同じ経路 | `{x}` を元ファイル名に置換できる |
 | 13 | `classes/models/class.validation-rules.php:91-96` | ルール一覧は `apply_filters( 'mwform_validation_rules', ... )`。キーはルール名（filetype / filesize / maxfilesize / minfilesize / noempty / required） | 同名キーで代理ルールに置き換えられる |
 | 14 | `classes/validation-rules/class.filesize.php` | `mwf_files` と `mwf_upload_files` に依存して検証する | 自作分には効かない。代理ルールが必要 |
-| 15 | `classes/functions.php:179-208` | DB保存時、添付をメディア登録し、問い合わせデータのメタ `{key}` に添付ID、`_mwf_upload_files` にキー配列を保存 | 自作でも同じ形式で保存すれば、一覧・CSV・詳細画面がそのまま表示する（`class.contact-data-list.php:285`、`class.csv.php:202`、`templates/contact-data/detail.php:43`） |
+| 15 | `classes/functions.php:179-208` | DB保存時、添付をメディア登録し、問い合わせデータのメタ `{key}` に添付ID、`_mwf_upload_files` にキー配列を保存 | 本プラグインはメディア登録をしない（2026-10-20 の決定）。問い合わせデータのその項目にはメールタグと同じ元ファイル名が保存される（#12） |
 | 16 | `classes/controllers/class.main.php:138`、`classes/services/class.exec-shortcode.php:72` | `mwform_start_main_process( $form_key )` は POST 処理時と描画時の両方で発火 | フォーム別フック（`*_{form_key}`）の登録点にする |
-| 17 | `classes/controllers/class.main.php:167` | 送信成功後に `mwform_after_send_{key}`（`clone $Data`）。保存IDは `MW_WP_Form_Data::get_saved_mail_id()`（`class.data.php:703`） | DB保存とファイル後始末はここで行う |
+| 17 | `classes/controllers/class.main.php:167` | 送信成功後に `mwform_after_send_{key}`（`clone $Data`）。保存IDは `MW_WP_Form_Data::get_saved_mail_id()`（`class.data.php:703`） | 保管場所への移動はここで行う。DB保存オンなら保存IDを保管ファイルのメタデータに記録する |
 | 18 | `classes/models/class.form.php:235` | form タグは `enctype="multipart/form-data"` を固定出力 | 本方式は非同期アップロードなので不要。5.2 で消えても影響なし |
 | 19 | `js/form.js:29` | 本体 JS が `.mw_wp_form input[type="file"]` の change を監視（name 属性前提） | name なしでも実害はない見込み。Phase 3 で動作確認する |
 | 20 | `classes/abstract/class.validation-rule.php` | 基底のコンストラクタも優先度 10 で自己登録。`rule( $name, $options )` と `admin( $key, $value )` が抽象メソッド | 代理ルールは基底を継承し、元のルールに処理を委譲する |
@@ -115,10 +120,13 @@ MW WP Form 5.2（2026年中にリリース予定）で `[mwform_file]` と `[mwf
 [完了処理]
   mwform_custom_mail_tag_{key}  → {field} を元ファイル名に置換
   mwform_admin_mail_{key}       → 元ファイル名でコピーして $Mail->attachments に追加
-  mwform_after_send_{key}       → DB保存ありならメディア登録、なしなら削除。トークンを消費済みにする
+  mwform_after_send_{key}       → 一時ファイルを保管場所（files/）へ移動。トークンを消費済みにする
 
 [WP-Cron（毎時）]
-  期限切れの一時ファイルを削除
+  期限切れの一時ファイルと、保存期間を過ぎた保管ファイルを削除
+
+[管理画面 MW WP Form → 添付ファイル]（管理者のみ）
+  保管ファイルの一覧・ダウンロード・画像プレビュー・個別削除・一括削除・保存期間の設定
 ```
 
 **トークンを正とする。** hidden の「元ファイル名」は表示用にすぎず、改ざんされうる。メール本文・添付名・保存名は必ずトークンのメタデータから取る。
@@ -141,7 +149,9 @@ mwwpf-file-upload/
 │   ├── class-storage.php         # 一時保存、トークン、メタデータ
 │   ├── class-ajax.php            # upload / delete / preview
 │   ├── class-mail.php            # メールタグ、添付
-│   ├── class-inquiry.php         # DB保存（メディア登録）
+│   ├── class-archive.php         # 送信済みファイルの保管（移動・一覧・削除）
+│   ├── class-admin-page.php      # 管理画面「添付ファイル」（一覧・ダウンロード・削除・設定）
+│   ├── class-admin-notice.php    # 保管場所が公開されている恐れがある場合の警告
 │   ├── class-cleanup.php         # WP-Cron
 │   ├── fields/
 │   │   ├── class-field-file.php  # [mwform_file] 置き換え
@@ -211,14 +221,22 @@ mwwpf-file-upload/
 
 ### 6.4 ストレージ（class-storage.php）
 
-- 一時保存先: 定数 `MWWPF_TMP_DIR` があればそれを使い、なければ `wp_upload_dir()['basedir'] . '/mwwpf-tmp'`。
-  - 作成時に `.htaccess`（`Require all denied` と旧書式 `Deny from all` を併記）と空の `index.php` を置く。
-  - Nginx では `.htaccess` が効かない。README に KUSANAGI 用の設定例を載せ、**公開ディレクトリ外の `MWWPF_TMP_DIR` 指定を推奨**と明記する:
+- 保管場所のルート: 定数 `MWWPF_STORAGE_DIR` があればそれを使い、なければ `wp_upload_dir()['basedir'] . '/mwwpf'`。配下に次の2つを作る。
+  - `tmp/`: アップロード直後の一時ファイル（未送信）と、メール添付用のコピー（`send-*`）
+  - `files/{form_id}/`: 送信済みの保管ファイル（§6.9）
+  - ルートと各ディレクトリの作成時に `.htaccess`（`Require all denied` と旧書式 `Deny from all` を併記）と空の `index.php` を置く。
+  - Nginx では `.htaccess` が効かない。README に KUSANAGI 用の設定例を載せ、**公開ディレクトリ外の `MWWPF_STORAGE_DIR` 指定を推奨**と明記する:
     ```nginx
-    location ^~ /wp-content/uploads/mwwpf-tmp/ { deny all; return 404; }
+    location ^~ /wp-content/uploads/mwwpf/ { deny all; return 404; }
     ```
+- 公開の警告（class-admin-notice.php）: 次の両方を満たすとき、管理者に管理画面の通知（全画面）と「添付ファイル」画面上部の警告を出す。
+  - サーバが Nginx（`$_SERVER['SERVER_SOFTWARE']` に `nginx` を含む）、または `.htaccess` を解釈しないサーバ（`apply_filters( 'mwwpf_server_ignores_htaccess', ... )` で判定を上書きできる）
+  - 保管場所のルートの `realpath` が `ABSPATH` の `realpath` の配下にある
+  - 文言: 「添付ファイルの保管場所が公開ディレクトリ内にあり、このサーバでは .htaccess による保護が効きません。wp-config.php で MWWPF_STORAGE_DIR にドキュメントルート外のパスを指定するか、Nginx の設定で保管場所へのアクセスを拒否してください。」README の該当節へのリンクを付ける。
+  - Nginx 側で拒否設定済みのサイト向けに、定数 `MWWPF_STORAGE_PROTECTED`（true）で警告を消せる。
+- ファイル名は全てトークン由来（`{token}.bin`、拡張子なし）で、元のファイル名・拡張子をパスに使わない。保管場所が万一公開されても、名前の推測と実行はできない。
 - トークン: `bin2hex( random_bytes( 16 ) )`（32桁の16進）。検証は `^[a-f0-9]{32}$`。
-- ファイル: `{dir}/{token}.bin`（拡張子なし）。メタデータ: `{dir}/{token}.json`
+- ファイル: `tmp/{token}.bin`（拡張子なし）。メタデータ: `tmp/{token}.json`
   ```json
   {
     "form_id": 123, "field": "attach", "type": "file",
@@ -251,7 +269,7 @@ REST API ではなく `admin-ajax.php` を使う。未ログインの REST を�
 2. `form_id` の投稿が投稿タイプ `mw-wp-form` で公開状態
 3. `field` が §6.2 の一覧にある
 4. レート制限（IP ごと、既定 10分で30回。transient）
-5. 一時保存先の合計サイズ上限（既定 500MB）
+5. 一時保存先（`tmp/`）の合計サイズ上限（既定 500MB）
 6. `$_FILES['file']['error'] === UPLOAD_ERR_OK` かつ `is_uploaded_file()`
 7. サイズ ≤ `max_bytes`
 8. 拡張子が許可リストにあり、拒否リストにない
@@ -304,47 +322,47 @@ REST API ではなく `admin-ajax.php` を使う。未ログインの REST を�
 - 自動返信メールには添付しない。
 - PHPMailer で日本語ファイル名の添付が文字化けしないことを確認する（§9）。
 
-### 6.9 問い合わせデータ保存とファイルの後始末（class-inquiry.php）
+### 6.9 送信済みファイルの保管（class-archive.php）
 
-`mwform_after_send_{form_key}`（`$Data` のクローン）で実行する。
+`mwform_after_send_{form_key}`（`$Data` のクローン）で実行する。全フォームが対象（本体の DB保存の設定に関係しない）。メディアライブラリには登録しない。
 
-- `$saved_id = $Data->get_saved_mail_id()`
-- **保存IDがない場合（DB保存オフ）:** 対象項目の一時ファイルを削除する。
-- **保存IDがある場合:** 対象項目ごとに次を行う。
-  1. 保存先ディレクトリ: `apply_filters( 'mwform_upload_dir_' . $form_key, '', clone $Data, $name )`。空なら `wp_upload_dir()['path']`、値があれば `basedir` からの相対パス（本体と同じ解釈）。
-  2. ファイル名: `apply_filters( 'mwform_upload_filename_' . $form_key, '', clone $Data, $name )`。空なら `{name}-{元ファイル名}`（本体 5.0 以降と同じ）。拡張子がなければ元の拡張子を足す。`sanitize_file_name()` → `wp_unique_filename()`。
-  3. 一時ファイルを移動する。
-  4. `wp_insert_attachment()`: 親 = `$saved_id`、`post_title` = `$name`、`post_mime_type` = メタデータの mime、`post_status` = `inherit`、`post_content` = 「Uploaded from {問い合わせデータの投稿タイプ名}」（本体と同じ）。
-  5. 画像なら `wp_generate_attachment_metadata()` と `wp_update_attachment_metadata()`。
-  6. `update_post_meta( $saved_id, $name, $attach_id )`
-  7. `_mwf_upload_files` メタ（配列）に `$name` を追加する（既存の値とマージ）。
-- 最後にトークンを消費済みにし、`.bin` / `.json` を削除する。
+- 対象項目ごとに、`resolve()` できたトークンについて次を行う。
+  1. 一時ファイル `tmp/{token}.bin` を `files/{form_id}/{token}.bin` へ `rename` する（同じファイルシステム内の移動。失敗したら `copy` → 元を削除）。
+  2. メタデータ `files/{form_id}/{token}.json` を書く。一時ファイルのメタデータに次を加える（`sid_hash` は保管しない）:
+     `submission`（同じ送信の項目で共通のランダム16桁）、`archived`（保管した時刻）、`saved_mail_id`（`$Data->get_saved_mail_id()`。DB保存オフなら null）
+  3. 一時ファイルの `.bin` / `.json` を削除し、トークンを消費済みにする。
+- 保管ファイルの読み込み・削除はトークンからだけパスを組み立てる（`files/{form_id}/{token}.bin`。form_id は整数、トークンは `^[a-f0-9]{32}$` で検証）。
+- 一覧用の API: `list( array $args ): array{ items, total }`（引数: form_id、ページ、件数、並び順）。`files/*/` の `.json` を読み、`archived` の降順で返す。
+- `delete( $form_id, $token )`、`get_path( $form_id, $token )`（存在確認つき）を持つ。
 - メール送信が失敗した場合はこのフックが呼ばれない。一時ファイルは §6.10 の掃除で消える。
 
 ### 6.10 掃除（class-cleanup.php）
 
 - 有効化時に WP-Cron（毎時）を登録し、無効化時に解除する。
-- 作成から `mwwpf_tmp_ttl`（既定 24時間）を過ぎた `.bin` / `.json`、消費済みのもの、ペアが欠けたもの、1時間以上前の `send-*` ディレクトリを削除する。
-- 削除は一時保存先の配下に限定する（`realpath` で確認してから `unlink`）。
+- `tmp/`: 作成から `mwwpf_tmp_ttl`（既定 24時間）を過ぎた `.bin` / `.json`、消費済みのもの、ペアが欠けたもの、1時間以上前の `send-*` ディレクトリを削除する。
+- `files/`: 保管から保存期間（オプション `mwwpf_retention_days`、既定 30日）を過ぎた `.bin` / `.json` と、ペアが欠けたもの（1時間以上経過）を削除する。保存期間が 0 のときは自動削除しない。
+- 削除は保管場所のルート配下に限定する（`realpath` で確認してから `unlink`）。
 
-### 6.11 設定（v1 は管理画面 UI なし。定数とフィルターで変更する）
+### 6.11 設定（管理画面で変えられるのは保存期間のみ。他は定数とフィルターで変更する）
 
 | 名前 | 種類 | 既定 | 内容 |
 |---|---|---|---|
-| `MWWPF_TMP_DIR` | 定数 | `uploads/mwwpf-tmp` | 一時保存先。公開ディレクトリ外を推奨 |
-| `mwwpf_default_max_bytes` | フィルター | 5MB | filesize 未設定時の上限 |
+| `MWWPF_STORAGE_DIR` | 定数 | `uploads/mwwpf` | 保管場所のルート（`tmp/` と `files/`）。公開ディレクトリ外を推奨 |
+| `MWWPF_STORAGE_PROTECTED` | 定数 | なし | true でサーバ側の保護設定済みとみなし、§6.4 の警告を出さない |
+| `mwwpf_retention_days` | オプション | 30 | 保管ファイルの保存期間（日）。0 で自動削除しない。「添付ファイル」画面で変更する |
+| `mwwpf_server_ignores_htaccess` | フィルター | Nginx なら true | §6.4 の警告の判定 |
+| `mwwpf_default_max_bytes` | フィルター | 10MB | filesize 未設定時の上限（§10 Q1 の回答） |
 | `mwwpf_default_exts` | フィルター | file: `pdf,jpg,jpeg,png,gif,webp,heic,doc,docx,xls,xlsx,ppt,pptx,txt,csv,zip` / image: `jpg,jpeg,png,gif,webp` | filetype 未設定時の許可拡張子 |
 | `mwwpf_tmp_ttl` | フィルター | 86400 秒 | 一時ファイルの保持時間 |
 | `mwwpf_rate_limit` | フィルター | `[ 30, 600 ]` | 回数と秒数 |
 | `mwwpf_tmp_quota_bytes` | フィルター | 500MB | 一時保存先の合計上限 |
 | `mwwpf_form_fields` | フィルター | — | §6.2 |
 
-既定の許可拡張子は §10 で確定する。
-
 ### 6.12 アンインストール（uninstall.php）
 
-- 一時保存先を削除し、Cron とオプション・transient を消す。
-- メディア登録済みのファイルと問い合わせデータは**消さない**。
+- 保管場所のルート（`tmp/` と `files/` を含む）を削除し、Cron とオプション・transient を消す。保管ファイルは本プラグイン専用のデータのため一緒に消える。README に「アンインストール前に必要なファイルはダウンロードしておく」と明記する。
+- 本体の問い合わせデータは**消さない**。
+- 無効化だけでは保管ファイルを消さない（Cron の解除のみ）。
 
 ### 6.13 更新配信（Plugin Update Checker）
 
@@ -366,6 +384,21 @@ REST API ではなく `admin-ajax.php` を使う。未ログインの REST を�
 - 非公開リポジトリ用のトークンは設定しない（公開リポジトリが前提）。
 - `vendor/autoload.php` がない場合（開発中に `composer install` 前など）は、更新チェックだけを無効にしてプラグイン本体は動かす。
 
+### 6.14 管理画面「添付ファイル」（class-admin-page.php）
+
+- MW WP Form のメニュー（`edit.php?post_type=mw-wp-form`）の下に、サブメニュー「添付ファイル」を追加する。権限は `manage_options`（`apply_filters( 'mwwpf_admin_capability', 'manage_options' )`）。
+- 一覧は `WP_List_Table` を継承して作る。
+  - 列: チェックボックス、プレビュー（画像のみ。サムネイル）、元のファイル名、フォーム名（フォーム編集画面へのリンク）、項目名、サイズ、種類（MIME）、受信日時（サイトのタイムゾーン）、削除予定日（保存期間 0 なら「自動削除なし」）、問い合わせデータ（`saved_mail_id` があれば詳細画面へのリンク）
+  - 同じ送信（`submission`）のファイルが分かるよう、受信日時で並べる（既定は新しい順）。
+  - フォームでの絞り込み（セレクトボックス）、ページ送り（1ページ 20件、画面オプションで変更可）。
+  - 行の操作: 「ダウンロード」「削除」。一括操作: 「削除」。
+- ダウンロード: `admin-post.php?action=mwwpf_download&form_id=&token=&_wpnonce=`。権限・nonce・トークン形式を確認し、元のファイル名で `Content-Disposition: attachment` を返す（ファイル名は RFC 5987 の `filename*=UTF-8''...` で日本語に対応）。`X-Content-Type-Options: nosniff`、`Cache-Control: no-store` を付ける。
+- 画像プレビュー: `admin-post.php?action=mwwpf_thumb&...`。画像（png / jpeg / gif / webp）だけを `Content-Disposition: inline` で返す。それ以外は 404。サムネイル画像は生成せず、原寸を CSS で縮小表示する。
+- 削除（個別・一括）: `admin-post.php` への POST。権限・nonce を確認し、`delete()` を呼ぶ。完了後に件数を通知（`?deleted=n`）して一覧へ戻る。個別削除は確認ダイアログを出す。
+- 保存期間の設定: 一覧の上に「保存期間 [30] 日（0 で自動削除しない）[保存]」のフォーム。0〜3650 の整数。nonce を確認して `mwwpf_retention_days` を更新する。
+- 画面上部に、保管ファイルの件数と合計サイズを表示する。§6.4 の警告条件を満たす場合は、ここにも警告を出す。
+- 全ての出力をエスケープし、パスは画面に出さない。
+
 ---
 
 ## 7. セキュリティ要件
@@ -380,11 +413,13 @@ REST API ではなく `admin-ajax.php` を使う。未ログインの REST を�
 - [ ] 拡張子の許可リストと拒否リストを両方適用する。拒否リストは常に優先する: `php, php3, php4, php5, php7, php8, phtml, phar, phps, pht, cgi, pl, py, rb, sh, asp, aspx, jsp, exe, com, bat, cmd, js, mjs, html, htm, shtml, xhtml, svg, svgz, xml, htaccess, htpasswd, ini, user.ini`
 - [ ] 二重拡張子（`a.php.pdf`）は最後の拡張子で判定し、保存名に元の拡張子を使わない（`.bin` 固定）
 - [ ] `wp_check_filetype_and_ext()` と `finfo` で実際の内容を確認する
-- [ ] 一時保存先に直接アクセスできない（Apache は `.htaccess`、Nginx は設定または公開ディレクトリ外）
+- [ ] 保管場所（`tmp/` と `files/`）に直接アクセスできない（Apache は `.htaccess`、Nginx は設定または公開ディレクトリ外）。保護が効かない恐れがあるときは管理画面で警告する（§6.4）
+- [ ] 「添付ファイル」画面・ダウンロード・プレビュー・削除・設定の全てで、権限（既定 `manage_options`）と nonce を確認する
+- [ ] ダウンロード・プレビュー・削除のパスは、整数の form_id と形式を検証したトークンからだけ組み立てる
 - [ ] 全ての Ajax に nonce、レート制限、容量上限をかける
 - [ ] プレビューは画像のみ。`nosniff` と `no-store` を付ける
 - [ ] 送信後にトークンを消費済みにし、再利用できない
-- [ ] `unlink` は一時保存先配下に限定する（`realpath` で確認）
+- [ ] `unlink` は保管場所のルート配下に限定する（`realpath` で確認）
 - [ ] 出力は全てエスケープする
 - [ ] エラーメッセージにサーバのパスを含めない
 - [ ] 配布 zip と CI の要件（除外ファイル、ワークフローの権限）は環境準備 §12 を満たしたまま変えない
@@ -401,7 +436,7 @@ REST API ではなく `admin-ajax.php` を使う。未ログインの REST を�
 | 3 | フロント JS、入力・確認・戻る・エラー再表示 | §9.1 の画面遷移テストが通る |
 | 4 | 代理バリデーションルール | §9.1 のバリデーションテストが通る |
 | 5 | メール（メールタグ、添付） | 添付と本文が §9.1 のとおり |
-| 6 | DB保存（メディア登録、問い合わせデータ画面での表示） | 一覧・詳細・CSV に添付が表示される |
+| 6 | 送信済みファイルの保管（§6.9）、保存期間による削除（§6.10）、管理画面「添付ファイル」（§6.14）、公開の警告（§6.4） | §9.1 の T10〜T12・T17〜T20 が通る |
 | 7 | 5.2 模擬テスト（§9.3）、README、多言語化、PHPCS 修正 | 全テストが通り、PHPCS の警告がゼロ |
 | 8 | 更新配信（§6.13）: Plugin Update Checker の組み込み。`release.yml` と `.distignore` は環境準備で作成済み | §9.5 の更新テストが通る |
 
@@ -435,9 +470,13 @@ REST API ではなく `admin-ajax.php` を使う。未ログインの REST を�
 | T7 | .docx を attach に選ぶ | filetype のエラー（クライアント側とサーバ側の両方） |
 | T8 | 3MB の PDF | filesize のエラー |
 | T9 | 3000×3000 の PNG を photo に選ぶ | maxfilesize のエラー |
-| T10 | DB保存オン | 問い合わせデータの一覧・詳細・CSV に添付が表示され、メディアに登録される |
-| T11 | DB保存オフ | 送信後、一時ファイルが残らない |
-| T12 | `mwform_upload_dir_*` と `mwform_upload_filename_*` を設定 | 保存先・ファイル名がフィルターどおり |
+| T10 | 送信（DB保存オン・オフの両方） | 保管場所 `files/{form_id}/` に保管され、「添付ファイル」画面に表示される。メディアライブラリには登録されない。DB保存オンなら問い合わせデータへのリンクが出る |
+| T11 | 送信後 | `tmp/` に一時ファイルが残らない |
+| T12 | 保存期間を 1日にして、保管から1日を過ぎたファイル（テストではメタデータの時刻を書き換える）で掃除を実行 | 削除される。期間内のものは残る。保存期間 0 なら削除されない |
+| T17 | 「添付ファイル」画面でダウンロード・画像プレビュー | 元のファイル名（日本語含む）でダウンロードできる。画像はプレビューされる |
+| T18 | 個別削除、チェックしての一括削除 | 選んだファイルだけが削除され、件数が通知される |
+| T19 | 管理者以外（編集者）・未ログインで画面・ダウンロード URL にアクセス | 拒否される |
+| T20 | Nginx 相当（`mwwpf_server_ignores_htaccess` を true）で保管場所が公開ディレクトリ内 | 管理画面に警告が出る。`MWWPF_STORAGE_PROTECTED` で消える |
 | T13 | 自動返信メール | 添付されない |
 | T14 | 1ページに2フォーム | 互いに干渉しない |
 | T15 | アップロード中に送信ボタン | 押せない |
@@ -454,9 +493,10 @@ REST API ではなく `admin-ajax.php` を使う。未ログインの REST を�
 | S5 | 項目名に `../` やヌルバイト | 拒否 |
 | S6 | hidden のファイル名だけ改ざん | メール本文・添付名はトークン側の元ファイル名 |
 | S7 | 送信済みトークンの再送信 | 解決されない |
-| S8 | 一時保存先の URL に直接アクセス | 403 または 404（Apache と Nginx の両方） |
+| S8 | 保管場所（`tmp/` と `files/`）の URL に直接アクセス | 403 または 404（Apache と Nginx の両方） |
 | S9 | nonce なし、またはレート制限超過 | 拒否 |
 | S10 | プレビューに PDF のトークンを指定 | 404 |
+| S11 | 管理画面のダウンロード・削除に、形式外のトークンや `../` を含む form_id、nonce なし | 拒否 |
 
 ### 9.3 5.2 互換テスト
 
@@ -465,7 +505,7 @@ REST API ではなく `admin-ajax.php` を使う。未ログインの REST を�
 
 ### 9.4 実環境での確認
 
-- Xserver（Apache、PHP 8.x）と KUSANAGI 9（Nginx、PHP-FPM）のステージングで T1・T2・T10・S8 を手動確認する。
+- Xserver（Apache、PHP 8.x）と KUSANAGI 9（Nginx、PHP-FPM）のステージングで T1・T2・T10・T20・S8 を手動確認する。
 - ページキャッシュ（KUSANAGI のページキャッシュ、キャッシュ系プラグイン）が有効でも、フォームページで nonce が古くならないこと。
 
 ### 9.5 更新配信テスト
@@ -484,11 +524,11 @@ REST API ではなく `admin-ajax.php` を使う。未ログインの REST を�
 
 ## 10. 要確認事項（実装前に質問する）
 
-| # | 項目 | 回答がない場合の既定 |
+| # | 項目 | 回答（2026-10-20） |
 |---|---|---|
-| Q1 | filetype 未設定時の許可拡張子と上限サイズ | §6.11 の値 |
-| Q2 | 一時保存先を公開ディレクトリ外にできるか（サイトごと） | `uploads/mwwpf-tmp` + `.htaccess`。Nginx のサイトは設定追加が必須 |
-| Q3 | DB保存時に本体と同じくメディアライブラリ（公開URL）へ置いてよいか | 本体互換（公開URL）。非公開保存は v2 で検討 |
+| Q1 | filetype 未設定時の許可拡張子と上限サイズ | 拡張子は §6.11 の値。上限は 10MB |
+| Q2 | 一時保存先を公開ディレクトリ外にできるか（サイトごと） | 既定は `uploads/mwwpf` + `.htaccess`。Nginx などで公開ディレクトリ内なら管理画面で警告し、ドキュメントルート外の `MWWPF_STORAGE_DIR` 指定を促す。README にも記載 |
+| Q3 | DB保存時に本体と同じくメディアライブラリ（公開URL）へ置いてよいか | メディア登録（DB保存）は不要。送信済みファイルは全フォームで非公開の保管場所に 30日（変更可）保管し、管理画面「添付ファイル」で管理者だけが一覧・ダウンロード・プレビュー・削除できる |
 
 プラグイン名・スラッグ、対応バージョンの下限、GitHub のアカウントは環境準備 S1〜S3 で確定済み。
 
@@ -499,7 +539,10 @@ REST API ではなく `admin-ajax.php` を使う。未ログインの REST を�
 - 本プラグインは MW WP Form の公式品ではないこと
 - 有効化するだけで既存の `[mwform_file]` `[mwform_image]` が置き換わること
 - JavaScript が必須であること
-- Nginx 環境の設定例（§6.4）と、`MWWPF_TMP_DIR` を公開ディレクトリ外に置く推奨
+- Nginx 環境の設定例（§6.4）と、`MWWPF_STORAGE_DIR` を公開ディレクトリ外に置く推奨。警告を消す `MWWPF_STORAGE_PROTECTED`
+- 送信済みファイルは「MW WP Form → 添付ファイル」で管理者だけが確認できること。保存期間（既定 30日）を過ぎると自動で削除されること
+- 本体の問い合わせデータ（DB保存）にはファイル名だけが残り、メディアライブラリには登録されないこと
+- アンインストールすると保管ファイルも削除されること
 - MW WP Form の削除予告（管理画面の通知）は 5.1.x の間表示され続けるが、動作には影響しないこと
 - 確認済みの MW WP Form バージョン
 - 更新は管理画面に通知されること。自動更新はサイトごとに有効化すること
