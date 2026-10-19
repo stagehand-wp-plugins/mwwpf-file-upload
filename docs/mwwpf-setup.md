@@ -2,6 +2,7 @@
 
 対象: Claude Code
 作成: 2026-10-19
+更新: 2026-10-19（初回適用で判明した wp-env 11 の注意点を反映）
 
 この指示書は、プラグインの実装を始める前の開発環境・GitHub・CI を準備するためのもの。プラグイン本体の実装は `docs/mwwpf-instructions.md`（プラグイン実装指示書）で行う。
 
@@ -120,6 +121,8 @@ S2 はプラグインヘッダに書くため、Step 2 の前に確認する。
   "config": {
     "WP_DEBUG": true,
     "WP_DEBUG_LOG": true,
+    "AUTOMATIC_UPDATER_DISABLED": true,
+    "WP_AUTO_UPDATE_CORE": false,
     "MWWPF_TEST_MAIL_CAPTURE": true
   },
   "mappings": {
@@ -130,6 +133,8 @@ S2 はプラグインヘッダに書くため、Step 2 の前に確認する。
 ```
 
 - `core` は S3 の最も古いバージョンにする（上の値は仮置き）。最新版での確認は §5.4 のとおり切り替える。
+- 自動更新は必ず止める。テスト環境のコアは `.git` なしでコピーされるため、止めないと WordPress の自動更新で最新版に上がり、下限バージョンでのテストにならない（実例: 6.0 → 7.1.3）。上がってしまった場合は、古いファイルが残るため `npx wp-env destroy` で作り直す。
+- wp-env 11 以降では、テスト環境の同時起動（`testsEnvironment` の既定動作）と `env` 設定が非推奨になり、起動時に警告が出る。現行版では動作する。次のメジャー版で削除された場合は、`--config` で別の設定ファイルを使う方式へ移行する。
 - MW WP Form は zip を直接指定せず、`tests/fixtures/mw-wp-form/` をマッピングする。通常版と模擬 5.2 を Step 7 のスクリプトで差し替えるため。
 - マッピングしたフォルダは有効化されないため、起動後に `wp-env run cli wp plugin activate mw-wp-form` と `tests-cli` 側の同じコマンドを実行する（npm スクリプトに含める）。
 
@@ -159,16 +164,32 @@ S4 の回答がない場合、この Step は行わない。
 
 `.wp-env.override.json`（コミットしない）を作る。開発環境だけを変え、テスト環境と CI は `localhost` のままにする（CI には Traefik がないため）。
 
+`WP_HOME` / `WP_SITEURL` は使わない。wp-env は `WP_SITEURL` に必ずポート番号を付け直すため、`http://plugins.localhost:8888` になってしまう。代わりに独自の定数を定義する。
+
 ```json
 {
   "env": {
     "development": {
       "config": {
-        "WP_HOME": "http://plugins.localhost",
-        "WP_SITEURL": "http://plugins.localhost"
+        "MWWPF_DEV_HOME": "http://plugins.localhost"
       }
     }
   }
+}
+```
+
+この定数があるときだけ URL を差し替える mu-plugin `tests/mu-plugins/mwwpf-dev-host.php` を作る（コミットする。定数がなければ何もしないため、テスト環境と CI には影響しない）。
+
+```php
+if ( ! defined( 'MWWPF_DEV_HOME' ) || ! MWWPF_DEV_HOME ) {
+	return;
+}
+
+add_filter( 'option_home', 'mwwpf_dev_home_url', 20 );
+add_filter( 'option_siteurl', 'mwwpf_dev_home_url', 20 );
+
+function mwwpf_dev_home_url() {
+	return untrailingslashit( MWWPF_DEV_HOME );
 }
 ```
 
@@ -179,6 +200,9 @@ S4 の回答がない場合、この Step は行わない。
 ### 6.3 Traefik
 
 既存の Traefik（ローカル Docker 共通のリバースプロキシ）の file provider に追加する。設定ファイルを読み、追加する差分を提示して承認を得てから書き込む。entryPoint 名は既存の設定に合わせる。
+
+- Traefik の場所: `/Users/kkazkeke/gdrive/@github/traefik`（entryPoint は `web`）。file provider は `dynamic/` を監視しているので、`dynamic/${SLUG}.yml` を追加するだけで反映される（コンテナの再起動は不要）。
+- file provider がない Traefik の場合は、compose の command に `--providers.file.directory=/etc/traefik/dynamic` と `--providers.file.watch=true` を、volumes に `./dynamic:/etc/traefik/dynamic:ro` を追加して、`docker compose up -d` で作り直す。
 
 ```yaml
 http:
@@ -223,7 +247,9 @@ Safari やコマンドラインで `plugins.localhost` が開けない場合は�
 
 ### 7.3 PHPUnit
 
-- wp-env のテスト環境に含まれる WordPress のテストライブラリを使い、`tests-cli` コンテナ内で実行する。テストライブラリのパスは使用する wp-env のドキュメントで確認する。
+- wp-env のテスト環境に含まれる WordPress のテストライブラリを使い、`tests-cli` コンテナ内で実行する。テストライブラリのパスは使用する wp-env のドキュメントで確認する（wp-env 11 では環境変数 `WP_TESTS_DIR` = `/wordpress-phpunit`）。
+- PHPUnit は必ず `WORDPRESS_TABLE_PREFIX=wptests_` を付けて実行する（例: `wp-env run tests-cli --env-cwd=wp-content/plugins/${SLUG} env WORDPRESS_TABLE_PREFIX=wptests_ vendor/bin/phpunit`）。テストライブラリはテスト用サイトと同じデータベース・接頭辞を使うため、付けないと Playwright 用のサイト（8889）が初期化されて E2E が壊れる。
+- `.phpunit.result.cache` は `.gitignore` と `.distignore` に追加する。
 - `tests/phpunit/bootstrap.php` で MW WP Form と本プラグインを読み込む。
 - 空のテストを1件作る（`MW_WP_Form_Abstract_Form_Field` クラスが存在することを確認するだけのもの）。
 
@@ -312,7 +338,7 @@ S1 の回答後に行う。
 - トリガー: `v*` のタグ push
 - 権限: `contents: write`（このワークフローだけ）
 - 手順:
-  1. タグ（先頭の `v` を除く）とプラグインヘッダの `Version:` が一致しなければ失敗させる
+  1. タグ（先頭の `v` と `-rc.1` などの接尾辞を除く）とプラグインヘッダの `Version:` が一致しなければ失敗させる（例: `v0.1.0-rc.1` はヘッダ `0.1.0` と照合する）
   2. `ci.yml` と同じテストを実行する（reusable workflow にしてもよい）
   3. `composer install --no-dev --optimize-autoloader`
   4. §12.3 の手順で `${SLUG}.zip` を作る
