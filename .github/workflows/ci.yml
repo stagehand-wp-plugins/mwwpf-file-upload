@@ -55,6 +55,8 @@ jobs:
         run: |
           npx wp-env start
           npm run env:activate
+          npx wp-env run tests-cli php -r 'echo "PHP ", PHP_VERSION, PHP_EOL;'
+          npx wp-env run tests-cli wp core version
 
       - name: PHPUnit
         run: npm run test:php
