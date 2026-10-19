@@ -1,0 +1,22 @@
+{
+	"name": "mwwpf-file-upload",
+	"version": "0.1.0",
+	"private": true,
+	"description": "File Upload for MW WP Form",
+	"license": "GPL-2.0-or-later",
+	"scripts": {
+		"env:start": "bin/mwf-fixture.sh 5.1.8 && wp-env start && npm run env:activate",
+		"env:sim52": "bin/mwf-fixture.sh sim52 && wp-env start --update && npm run env:activate",
+		"env:activate": "wp-env run cli wp plugin activate mw-wp-form && wp-env run tests-cli wp plugin activate mw-wp-form",
+		"env:stop": "wp-env stop",
+		"lint": "vendor/bin/phpcs",
+		"test:php": "wp-env run tests-cli --env-cwd=wp-content/plugins/mwwpf-file-upload env WORDPRESS_TABLE_PREFIX=wptests_ vendor/bin/phpunit",
+		"test:e2e": "playwright test",
+		"test": "npm run lint && npm run test:php && npm run test:e2e",
+		"build": "bin/build-zip.sh"
+	},
+	"devDependencies": {
+		"@playwright/test": "^1.64.1",
+		"@wordpress/env": "^11.17.0"
+	}
+}

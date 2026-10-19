@@ -1,0 +1,16 @@
+{
+	"core": "WordPress/WordPress#6.0",
+	"phpVersion": "8.0",
+	"plugins": [ "." ],
+	"config": {
+		"WP_DEBUG": true,
+		"WP_DEBUG_LOG": true,
+		"AUTOMATIC_UPDATER_DISABLED": true,
+		"WP_AUTO_UPDATE_CORE": false,
+		"MWWPF_TEST_MAIL_CAPTURE": true
+	},
+	"mappings": {
+		"wp-content/plugins/mw-wp-form": "./tests/fixtures/mw-wp-form",
+		"wp-content/mu-plugins": "./tests/mu-plugins"
+	}
+}

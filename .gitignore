@@ -6,3 +6,5 @@
 /playwright-report/
 .wp-env.override.json
 .DS_Store
+/tests/fixtures/.cache/
+/.phpunit.result.cache

@@ -1,0 +1,46 @@
+<?xml version="1.0"?>
+<ruleset name="mwwpf-file-upload">
+	<description>Coding standards for File Upload for MW WP Form.</description>
+
+	<file>.</file>
+
+	<exclude-pattern>/vendor/*</exclude-pattern>
+	<exclude-pattern>/node_modules/*</exclude-pattern>
+	<exclude-pattern>/tests/fixtures/*</exclude-pattern>
+	<exclude-pattern>/dist/*</exclude-pattern>
+	<exclude-pattern>/test-results/*</exclude-pattern>
+	<exclude-pattern>/playwright-report/*</exclude-pattern>
+
+	<arg name="extensions" value="php"/>
+	<arg name="colors"/>
+	<arg value="sp"/>
+	<arg name="parallel" value="8"/>
+
+	<config name="testVersion" value="8.0-"/>
+	<config name="minimum_wp_version" value="6.0"/>
+
+	<rule ref="WordPress"/>
+	<rule ref="PHPCompatibilityWP"/>
+
+	<rule ref="WordPress.WP.I18n">
+		<properties>
+			<property name="text_domain" type="array">
+				<element value="mwwpf-file-upload"/>
+			</property>
+		</properties>
+	</rule>
+
+	<rule ref="WordPress.NamingConventions.PrefixAllGlobals">
+		<properties>
+			<property name="prefixes" type="array">
+				<element value="mwwpf"/>
+				<element value="MWWPF"/>
+			</property>
+		</properties>
+	</rule>
+
+	<!-- Test files follow PHPUnit naming, not WordPress file naming. -->
+	<rule ref="WordPress.Files.FileName">
+		<exclude-pattern>/tests/*</exclude-pattern>
+	</rule>
+</ruleset>
