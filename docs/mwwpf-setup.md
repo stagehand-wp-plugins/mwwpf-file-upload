@@ -201,7 +201,7 @@ function mwwpf_dev_home_url() {
 
 既存の Traefik（ローカル Docker 共通のリバースプロキシ）の file provider に追加する。設定ファイルを読み、追加する差分を提示して承認を得てから書き込む。entryPoint 名は既存の設定に合わせる。
 
-- Traefik の場所: `/Users/kkazkeke/gdrive/@github/traefik`（entryPoint は `web`）。file provider は `dynamic/` を監視しているので、`dynamic/${SLUG}.yml` を追加するだけで反映される（コンテナの再起動は不要）。
+- Traefik の場所: `/Users/kkazkeke/Developer/traefik`（entryPoint は `web`）。file provider は `dynamic/` を監視しているので、`dynamic/${SLUG}.yml` を追加するだけで反映される（コンテナの再起動は不要）。
 - file provider がない Traefik の場合は、compose の command に `--providers.file.directory=/etc/traefik/dynamic` と `--providers.file.watch=true` を、volumes に `./dynamic:/etc/traefik/dynamic:ro` を追加して、`docker compose up -d` で作り直す。
 
 ```yaml
