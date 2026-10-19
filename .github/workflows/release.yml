@@ -1,0 +1,64 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+jobs:
+  check-version:
+    name: Check version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Compare tag and plugin header
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          header="$(sed -n 's/^[ *]*Version:[[:space:]]*//p' mwwpf-file-upload.php | head -n1 | tr -d '[:space:]')"
+          # A pre-release tag (e.g. 1.1.0-rc.1) must match the header version before the suffix.
+          base="${tag%%-*}"
+          echo "tag=${tag} base=${base} header=${header}"
+          if [ "${base}" != "${header}" ]; then
+            echo "::error::Tag ${GITHUB_REF_NAME} does not match plugin header Version: ${header}"
+            exit 1
+          fi
+
+  test:
+    needs: check-version
+    uses: ./.github/workflows/ci.yml
+
+  release:
+    name: Build and publish
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          tools: composer:v2
+          coverage: none
+
+      - name: Build zip
+        run: bin/build-zip.sh
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          prerelease=""
+          case "${GITHUB_REF_NAME}" in
+            *-*) prerelease="--prerelease" ;;
+          esac
+          gh release create "${GITHUB_REF_NAME}" dist/mwwpf-file-upload.zip \
+            --title "${GITHUB_REF_NAME}" \
+            --generate-notes \
+            --verify-tag \
+            ${prerelease}
