@@ -201,7 +201,7 @@ function mwwpf_dev_home_url() {
 
 既存の Traefik（ローカル Docker 共通のリバースプロキシ）の file provider に追加する。設定ファイルを読み、追加する差分を提示して承認を得てから書き込む。entryPoint 名は既存の設定に合わせる。
 
-- Traefik の場所: `/Users/kkazkeke/gdrive/@github/traefik`（entryPoint は `web`）。file provider は `dynamic/` を監視しているので、`dynamic/${SLUG}.yml` を追加するだけで反映される（コンテナの再起動は不要）。
+- Traefik の場所: `/Users/kkazkeke/Developer/traefik`（entryPoint は `web`）。file provider は `dynamic/` を監視しているので、`dynamic/${SLUG}.yml` を追加するだけで反映される（コンテナの再起動は不要）。
 - file provider がない Traefik の場合は、compose の command に `--providers.file.directory=/etc/traefik/dynamic` と `--providers.file.watch=true` を、volumes に `./dynamic:/etc/traefik/dynamic:ro` を追加して、`docker compose up -d` で作り直す。
 
 ```yaml
@@ -224,7 +224,20 @@ http:
 
 Safari やコマンドラインで `plugins.localhost` が開けない場合は、`/etc/hosts` への `127.0.0.1 plugins.localhost` の追加を提案する（承認後に実施）。
 
-**確認:** `http://plugins.localhost/wp-admin/` でログインでき、管理画面のリンクが全て `plugins.localhost` になっている。`http://localhost:8889` のテスト環境は従来どおり開ける。
+### 6.5 メールの確認（Mailpit）
+
+開発環境のメールは Mailpit に送り、`http://mail.plugins.localhost` で確認する。テスト環境と CI は従来どおり mu-plugin のメール捕捉（§9.2）を使う。
+
+- Mailpit は `DEV_ROOT` 配下のプラグインで共通の1つを使う。場所: `/Users/kkazkeke/Developer/mailpit/docker-compose.yml`（SMTP は `127.0.0.1:1025` に公開、UI は Traefik の docker provider で `mail.plugins.localhost`）。起動していなければ `docker compose up -d` する。
+- `.wp-env.override.json` の development に次を追加する。メール捕捉を開発環境だけ無効にし、SMTP の宛先を指定する。
+  ```json
+  "MWWPF_DEV_SMTP_HOST": "host.docker.internal",
+  "MWWPF_DEV_SMTP_PORT": 1025,
+  "MWWPF_TEST_MAIL_CAPTURE": false
+  ```
+- 定数があるときだけ SMTP 送信に切り替える mu-plugin `tests/mu-plugins/mwwpf-dev-mail.php` を作る（`phpmailer_init` で `isSMTP()`、認証・TLS なし）。
+
+**確認:** `http://plugins.localhost/wp-admin/` でログインでき、管理画面のリンクが全て `plugins.localhost` になっている。開発環境で送信したメールが `http://mail.plugins.localhost` に届く。`http://localhost:8889` のテスト環境は従来どおり開ける。
 
 ---
 
