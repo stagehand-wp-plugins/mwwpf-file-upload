@@ -51,6 +51,14 @@ final class MWWPF_Plugin {
 	public function boot() {
 		require_once MWWPF_PLUGIN_DIR . 'includes/class-mwwpf-form-scanner.php';
 		require_once MWWPF_PLUGIN_DIR . 'includes/class-mwwpf-storage.php';
+		require_once MWWPF_PLUGIN_DIR . 'includes/class-mwwpf-ajax.php';
+		require_once MWWPF_PLUGIN_DIR . 'includes/class-mwwpf-cleanup.php';
+
+		register_activation_hook( MWWPF_PLUGIN_FILE, array( 'MWWPF_Cleanup', 'activate' ) );
+		register_deactivation_hook( MWWPF_PLUGIN_FILE, array( 'MWWPF_Cleanup', 'deactivate' ) );
+
+		// Cleanup must keep running even if MW WP Form is deactivated.
+		MWWPF_Cleanup::register();
 
 		// MW WP Form loads its classes on plugins_loaded priority 9.
 		add_action( 'plugins_loaded', array( $this, 'init' ), 20 );
@@ -82,6 +90,8 @@ final class MWWPF_Plugin {
 		// The base class registers each field on priority 10, the same as MW WP Form's own
 		// fields, so the winner would be undefined. Override on a later priority instead.
 		add_filter( 'mwform_form_fields', array( $this, 'override_form_fields' ), 100 );
+
+		MWWPF_Ajax::register();
 
 		add_action( 'wp_footer', array( $this, 'enqueue_assets' ), 1 );
 	}
