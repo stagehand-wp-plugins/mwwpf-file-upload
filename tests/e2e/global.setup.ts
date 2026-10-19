@@ -3,7 +3,7 @@ import { test as setup, expect } from '@playwright/test';
 import { createTestForms } from './utils/wp-env';
 
 const authFile = 'test-results/.auth/admin.json';
-export const formsFile = 'test-results/.forms.json';
+const formsFile = 'test-results/.forms.json';
 
 setup( 'create test forms', async () => {
 	const forms = createTestForms();

@@ -1,0 +1,59 @@
+.mwwpf {
+	display: inline-block;
+	max-width: 100%;
+}
+
+.mwwpf__input,
+.mwwpf__status,
+.mwwpf__noscript,
+.mwwpf-confirm {
+	display: block;
+}
+
+.mwwpf__status {
+	margin-top: 0.5em;
+}
+
+.mwwpf__file {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5em;
+	align-items: center;
+}
+
+.mwwpf__file[hidden],
+.mwwpf__progress[hidden] {
+	display: none;
+}
+
+.mwwpf__size {
+	color: #666;
+	font-size: 0.875em;
+}
+
+.mwwpf__thumb,
+.mwwpf-confirm__thumb {
+	display: block;
+	max-width: 160px;
+	max-height: 160px;
+	height: auto;
+}
+
+.mwwpf__progress {
+	display: block;
+	width: 100%;
+	max-width: 320px;
+}
+
+.mwwpf__error {
+	display: block;
+	color: #b32d2e;
+}
+
+.mwwpf__error:empty {
+	display: none;
+}
+
+.mwwpf.is-uploaded .mwwpf__input {
+	display: none;
+}
