@@ -27,6 +27,13 @@ final class MWWPF_Plugin {
 	private $fields = array();
 
 	/**
+	 * Proxy validation rule objects, keyed by rule name.
+	 *
+	 * @var array<string, MWWPF_Rule_Proxy>
+	 */
+	private $rules = array();
+
+	/**
 	 * Whether a file field was rendered on this request.
 	 *
 	 * @var bool
@@ -79,6 +86,14 @@ final class MWWPF_Plugin {
 		require_once MWWPF_PLUGIN_DIR . 'includes/fields/class-mwwpf-field-file.php';
 		require_once MWWPF_PLUGIN_DIR . 'includes/fields/class-mwwpf-field-image.php';
 
+		require_once MWWPF_PLUGIN_DIR . 'includes/validation/class-mwwpf-rule-proxy.php';
+		require_once MWWPF_PLUGIN_DIR . 'includes/validation/class-mwwpf-rule-noempty.php';
+		require_once MWWPF_PLUGIN_DIR . 'includes/validation/class-mwwpf-rule-required.php';
+		require_once MWWPF_PLUGIN_DIR . 'includes/validation/class-mwwpf-rule-filetype.php';
+		require_once MWWPF_PLUGIN_DIR . 'includes/validation/class-mwwpf-rule-filesize.php';
+		require_once MWWPF_PLUGIN_DIR . 'includes/validation/class-mwwpf-rule-maxfilesize.php';
+		require_once MWWPF_PLUGIN_DIR . 'includes/validation/class-mwwpf-rule-minfilesize.php';
+
 		$file  = new MWWPF_Field_File();
 		$image = new MWWPF_Field_Image();
 
@@ -90,6 +105,12 @@ final class MWWPF_Plugin {
 		// The base class registers each field on priority 10, the same as MW WP Form's own
 		// fields, so the winner would be undefined. Override on a later priority instead.
 		add_filter( 'mwform_form_fields', array( $this, 'override_form_fields' ), 100 );
+
+		foreach ( array( 'MWWPF_Rule_Noempty', 'MWWPF_Rule_Required', 'MWWPF_Rule_Filetype', 'MWWPF_Rule_Filesize', 'MWWPF_Rule_Maxfilesize', 'MWWPF_Rule_Minfilesize' ) as $class ) {
+			$rule                             = new $class();
+			$this->rules[ $rule->get_name() ] = $rule;
+		}
+		add_filter( 'mwform_validation_rules', array( $this, 'override_validation_rules' ), 100 );
 
 		MWWPF_Ajax::register();
 
@@ -131,6 +152,26 @@ final class MWWPF_Plugin {
 			$form_fields = array();
 		}
 		return array_merge( $form_fields, $this->fields );
+	}
+
+	/**
+	 * Replaces the file-related validation rules with proxies that also handle this plugin's
+	 * fields. The original rule objects are passed to the proxies; they are missing in 5.2+.
+	 *
+	 * @param array $rules Rule objects keyed by rule name.
+	 * @return array
+	 */
+	public function override_validation_rules( $rules ) {
+		if ( ! is_array( $rules ) ) {
+			$rules = array();
+		}
+		foreach ( $this->rules as $name => $proxy ) {
+			if ( ! isset( $rules[ $name ] ) || $rules[ $name ] !== $proxy ) {
+				$proxy->set_original( isset( $rules[ $name ] ) ? $rules[ $name ] : null );
+			}
+			$rules[ $name ] = $proxy;
+		}
+		return $rules;
 	}
 
 	/**
