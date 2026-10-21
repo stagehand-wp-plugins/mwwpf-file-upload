@@ -148,7 +148,8 @@ class Test_Validation_Rules extends WP_UnitTestCase {
 		$this->assertNull( $this->rule( 'MWWPF_Rule_Noempty', array( 'attach' => $token ) )->rule( 'attach' ) );
 		$this->assertNotEmpty( $this->rule( 'MWWPF_Rule_Noempty', array( 'attach' => '' ) )->rule( 'attach' ) );
 		$this->assertNotEmpty( $this->rule( 'MWWPF_Rule_Noempty', array() )->rule( 'attach' ) );
-		$this->assertNotEmpty( $this->rule( 'MWWPF_Rule_Required', array( 'attach' => 'f' . substr( $token, 1 ) ) )->rule( 'attach' ) );
+		$tampered = ( 'f' === $token[0] ? 'e' : 'f' ) . substr( $token, 1 );
+		$this->assertNotEmpty( $this->rule( 'MWWPF_Rule_Required', array( 'attach' => $tampered ) )->rule( 'attach' ) );
 		$this->assertSame( 'custom', $this->rule( 'MWWPF_Rule_Required', array() )->rule( 'attach', array( 'message' => 'custom' ) ) );
 
 		// A token of another field does not count.
