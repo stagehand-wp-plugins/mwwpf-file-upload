@@ -60,6 +60,7 @@ final class MWWPF_Plugin {
 		require_once MWWPF_PLUGIN_DIR . 'includes/class-mwwpf-storage.php';
 		require_once MWWPF_PLUGIN_DIR . 'includes/class-mwwpf-ajax.php';
 		require_once MWWPF_PLUGIN_DIR . 'includes/class-mwwpf-cleanup.php';
+		require_once MWWPF_PLUGIN_DIR . 'includes/class-mwwpf-mail.php';
 
 		register_activation_hook( MWWPF_PLUGIN_FILE, array( 'MWWPF_Cleanup', 'activate' ) );
 		register_deactivation_hook( MWWPF_PLUGIN_FILE, array( 'MWWPF_Cleanup', 'deactivate' ) );
@@ -113,6 +114,9 @@ final class MWWPF_Plugin {
 		add_filter( 'mwform_validation_rules', array( $this, 'override_validation_rules' ), 100 );
 
 		MWWPF_Ajax::register();
+
+		// Fires both when a form is rendered and when it is posted.
+		add_action( 'mwform_start_main_process', array( 'MWWPF_Mail', 'register' ) );
 
 		add_action( 'wp_footer', array( $this, 'enqueue_assets' ), 1 );
 	}
