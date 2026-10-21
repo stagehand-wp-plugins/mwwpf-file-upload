@@ -197,14 +197,19 @@ class MWWPF_Field_File extends MW_WP_Form_Abstract_Form_Field {
 	/**
 	 * Returns the metadata of the file uploaded for this field, or null.
 	 *
-	 * Uploads are not implemented yet (Phase 2), so there is never an uploaded file.
+	 * The posted token is the source of truth: the posted file name is only for display
+	 * and may be tampered with, so the name always comes from the token's metadata.
 	 *
 	 * @param int    $form_id Form ID.
 	 * @param string $name    Field name.
 	 * @return array|null
 	 */
-	protected function get_uploaded( $form_id, $name ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found
-		return null;
+	protected function get_uploaded( $form_id, $name ) {
+		$token = $this->get_posted_token( $name );
+		if ( '' === $token ) {
+			return null;
+		}
+		return MWWPF_Storage::resolve( $token, $form_id, $name );
 	}
 
 	/**
@@ -241,7 +246,11 @@ class MWWPF_Field_File extends MW_WP_Form_Abstract_Form_Field {
 	 * @return string
 	 */
 	protected function render_preview( $form_id, $name, $uploaded ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found
-		return '';
+		$url = MWWPF_Storage::preview_url( $uploaded );
+		if ( 'image' !== $this->field_type() || '' === $url ) {
+			return '';
+		}
+		return sprintf( '<img class="mwwpf__thumb" src="%s" alt="" />', esc_url( $url ) );
 	}
 
 	/**

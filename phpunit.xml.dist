@@ -9,7 +9,7 @@
 >
 	<testsuites>
 		<testsuite name="mwwpf-file-upload">
-			<directory suffix=".php">./tests/phpunit/</directory>
+			<directory prefix="test-" suffix=".php">./tests/phpunit/</directory>
 			<exclude>./tests/phpunit/bootstrap.php</exclude>
 		</testsuite>
 	</testsuites>

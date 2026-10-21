@@ -77,3 +77,13 @@ add_action(
 		wp_send_json_success();
 	}
 );
+
+// Upload rate limit for the E2E tests. The suite uploads many files from one IP, so the
+// limit is effectively off unless a test sets one: wp option update mwwpf_test_rate_limit 3.
+add_filter(
+	'mwwpf_rate_limit',
+	static function () {
+		$max = (int) get_option( 'mwwpf_test_rate_limit', 0 );
+		return array( $max > 0 ? $max : 100000, 600 );
+	}
+);
