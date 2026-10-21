@@ -49,3 +49,13 @@ export function png( width: number, height: number ): Buffer {
 		chunk( 'IEND', Buffer.alloc( 0 ) ),
 	] );
 }
+
+/**
+ * Minimal valid JPEG (1x1).
+ */
+export function jpeg(): Buffer {
+	return Buffer.from(
+		'/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wgALCAABAAEBAREA/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxA=',
+		'base64'
+	);
+}
