@@ -87,3 +87,11 @@ add_filter(
 		return array( $max > 0 ? $max : 100000, 600 );
 	}
 );
+
+// Lets the E2E tests simulate a server that ignores .htaccess (Nginx): wp option update mwwpf_test_ignores_htaccess 1.
+add_filter(
+	'mwwpf_server_ignores_htaccess',
+	static function ( $ignores ) {
+		return get_option( 'mwwpf_test_ignores_htaccess' ) ? true : $ignores;
+	}
+);
