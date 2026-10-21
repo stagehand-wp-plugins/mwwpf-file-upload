@@ -154,5 +154,27 @@ final class MWWPF_Plugin {
 			array(),
 			MWWPF_VERSION
 		);
+
+		wp_enqueue_script(
+			'mwwpf',
+			MWWPF_PLUGIN_URL . 'assets/js/mwwpf.js',
+			array(),
+			MWWPF_VERSION,
+			true
+		);
+
+		// phpcs:disable WordPress.WP.I18n.TextDomainMismatch -- Messages shared with MW WP Form use its text domain.
+		$config = array(
+			'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+			'nonce'   => wp_create_nonce( MWWPF_Ajax::NONCE_ACTION ),
+			'i18n'    => array(
+				'invalidType' => __( 'This file is invalid.', 'mw-wp-form' ),
+				'tooBig'      => __( 'This file size is too big.', 'mw-wp-form' ),
+				'failed'      => __( 'Failed to upload the file.', 'mw-wp-form' ),
+			),
+		);
+		// phpcs:enable
+
+		wp_add_inline_script( 'mwwpf', 'window.mwwpfConfig = ' . wp_json_encode( $config ) . ';', 'before' );
 	}
 }

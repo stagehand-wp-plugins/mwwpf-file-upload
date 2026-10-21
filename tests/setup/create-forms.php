@@ -27,10 +27,15 @@ $body_direct = <<<'EOT'
 <p>メール [mwform_email name="your-email"]</p>
 <p>資料 [mwform_file name="attach"]</p>
 <p>写真 [mwform_image name="photo"]</p>
-<p>[mwform_bsubmit]送信[/mwform_bsubmit]</p>
+<p>[mwform_bsubmit display_input="true"]送信[/mwform_bsubmit]</p>
 EOT;
 
 $validation = array(
+	// Not in §9.1; needed for T4 (re-display after an error in another field).
+	array(
+		'target'  => 'your-name',
+		'noempty' => 1,
+	),
 	array(
 		'target'   => 'attach',
 		'noempty'  => 1,
