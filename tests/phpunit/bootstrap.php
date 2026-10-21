@@ -30,3 +30,4 @@ tests_add_filter(
 require $mwwpf_tests_dir . '/includes/bootstrap.php';
 
 require __DIR__ . '/includes/class-mwwpf-test-files.php';
+require __DIR__ . '/includes/class-mwwpf-test-original-rule.php';
