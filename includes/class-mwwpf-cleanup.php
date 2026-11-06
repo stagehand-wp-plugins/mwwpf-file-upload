@@ -1,6 +1,6 @@
 <?php
 /**
- * Scheduled cleanup of temporary files.
+ * Scheduled cleanup of temporary and archived files.
  *
  * @package MWWPF_File_Upload
  */
@@ -59,7 +59,7 @@ class MWWPF_Cleanup {
 	 * @return int Number of deleted files.
 	 */
 	public static function run() {
-		return self::clean_tmp();
+		return self::clean_tmp() + MWWPF_Archive::clean();
 	}
 
 	/**
@@ -69,6 +69,7 @@ class MWWPF_Cleanup {
 	 * @return int Number of deleted files.
 	 */
 	public static function clean_tmp( $now = null ) {
+		clearstatcache();
 		$now     = null === $now ? time() : (int) $now;
 		$dir     = MWWPF_Storage::root_dir() . '/tmp';
 		$deleted = 0;

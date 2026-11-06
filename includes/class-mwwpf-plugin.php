@@ -61,12 +61,19 @@ final class MWWPF_Plugin {
 		require_once MWWPF_PLUGIN_DIR . 'includes/class-mwwpf-ajax.php';
 		require_once MWWPF_PLUGIN_DIR . 'includes/class-mwwpf-cleanup.php';
 		require_once MWWPF_PLUGIN_DIR . 'includes/class-mwwpf-mail.php';
+		require_once MWWPF_PLUGIN_DIR . 'includes/class-mwwpf-archive.php';
+		require_once MWWPF_PLUGIN_DIR . 'includes/class-mwwpf-admin-notice.php';
+		require_once MWWPF_PLUGIN_DIR . 'includes/class-mwwpf-admin-page.php';
 
 		register_activation_hook( MWWPF_PLUGIN_FILE, array( 'MWWPF_Cleanup', 'activate' ) );
 		register_deactivation_hook( MWWPF_PLUGIN_FILE, array( 'MWWPF_Cleanup', 'deactivate' ) );
 
-		// Cleanup must keep running even if MW WP Form is deactivated.
+		// Cleanup and the stored files screen keep working even if MW WP Form is deactivated.
 		MWWPF_Cleanup::register();
+		if ( is_admin() ) {
+			MWWPF_Admin_Page::register();
+			MWWPF_Admin_Notice::register();
+		}
 
 		// MW WP Form loads its classes on plugins_loaded priority 9.
 		add_action( 'plugins_loaded', array( $this, 'init' ), 20 );
@@ -117,6 +124,7 @@ final class MWWPF_Plugin {
 
 		// Fires both when a form is rendered and when it is posted.
 		add_action( 'mwform_start_main_process', array( 'MWWPF_Mail', 'register' ) );
+		add_action( 'mwform_start_main_process', array( 'MWWPF_Archive', 'register' ) );
 
 		add_action( 'wp_footer', array( $this, 'enqueue_assets' ), 1 );
 	}
