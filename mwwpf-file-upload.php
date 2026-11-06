@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       File Upload for MW WP Form
  * Description:       Adds asynchronous file upload to MW WP Form. Not an official MW WP Form product.
- * Version:           0.1.0
+ * Version:           1.0.0
  * Requires at least: 6.0
  * Requires PHP:      8.0
  * License:           GPL-2.0-or-later
@@ -15,7 +15,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'MWWPF_VERSION', '0.1.0' );
+define( 'MWWPF_VERSION', '1.0.0' );
 define( 'MWWPF_PLUGIN_FILE', __FILE__ );
 define( 'MWWPF_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'MWWPF_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
