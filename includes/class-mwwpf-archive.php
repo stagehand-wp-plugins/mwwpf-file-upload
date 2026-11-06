@@ -110,6 +110,7 @@ class MWWPF_Archive {
 				return null;
 			}
 			MWWPF_Storage::safe_unlink( $source );
+			MWWPF_Storage::make_private( $target );
 		}
 
 		$archived = array(
@@ -129,7 +130,7 @@ class MWWPF_Archive {
 		);
 
 		$json = wp_json_encode( $archived, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES );
-		if ( false === $json || false === file_put_contents( $dir . '/' . $token . '.json', $json, LOCK_EX ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+		if ( false === $json || ! MWWPF_Storage::write_private( $dir . '/' . $token . '.json', $json ) ) {
 			MWWPF_Storage::safe_unlink( $target );
 			return null;
 		}

@@ -109,6 +109,9 @@ class MWWPF_Admin_Page {
 			self::handle_post();
 		}
 
+		// Checks whether the storage can be reached from outside (at most once a day; "Check again" forces it).
+		MWWPF_Storage_Check::maybe_run();
+
 		add_screen_option(
 			'per_page',
 			array(
@@ -135,9 +138,17 @@ class MWWPF_Admin_Page {
 	 */
 	private static function handle_post() {
 		// The retention form has its own nonce; the list form uses the nonce WP_List_Table prints.
-		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Only selects which nonce to verify.
+		// phpcs:disable WordPress.Security.NonceVerification.Missing -- Only selects which nonce to verify.
+		$is_check     = isset( $_POST['mwwpf_check_storage'] );
 		$is_retention = isset( $_POST['mwwpf_save_retention'] );
-		check_admin_referer( $is_retention ? self::NONCE_ACTION : 'bulk-mwwpf-files' );
+		// phpcs:enable
+		check_admin_referer( $is_retention || $is_check ? self::NONCE_ACTION : 'bulk-mwwpf-files' );
+
+		if ( $is_check ) {
+			MWWPF_Storage_Check::run();
+			wp_safe_redirect( self::url( array( 'mwwpf_checked' => 1 ) ) );
+			exit;
+		}
 
 		// phpcs:disable WordPress.Security.NonceVerification.Missing -- Checked above.
 		if ( $is_retention ) {
@@ -290,6 +301,86 @@ class MWWPF_Admin_Page {
 	}
 
 	/**
+	 * Renders the storage location, the result of the access check, and how to move the storage.
+	 */
+	private static function render_storage() {
+		$root   = MWWPF_Storage::root_dir();
+		$result = MWWPF_Storage_Check::get();
+		$status = $result ? $result['status'] : '';
+		$custom = '' !== MWWPF_Storage::configured_dir() && ! MWWPF_Storage::is_configured_dir_rejected();
+		$inside = MWWPF_Storage::path_contains( ABSPATH, $root );
+
+		switch ( $status ) {
+			case MWWPF_Storage_Check::PUBLIC_ACCESS:
+				$label = __( 'Accessible from outside. Uploaded files may be downloaded by anyone.', 'mwwpf-file-upload' );
+				break;
+			case MWWPF_Storage_Check::PROTECTED_ACCESS:
+				$label = __( 'Not accessible from outside (a test file placed there could not be read over HTTP).', 'mwwpf-file-upload' );
+				break;
+			case MWWPF_Storage_Check::OUTSIDE:
+				$label = __( 'Outside the directories this site serves. Make sure it is not inside the public directory of another domain on the same server.', 'mwwpf-file-upload' );
+				break;
+			default:
+				$label = __( 'Could not be checked.', 'mwwpf-file-upload' );
+				if ( $result && ( $result['code'] || $result['message'] ) ) {
+					$label .= ' (' . ( $result['code'] ? 'HTTP ' . $result['code'] : $result['message'] ) . ')';
+				}
+		}
+		?>
+		<div class="mwwpf-storage">
+			<table class="form-table" role="presentation">
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Storage location', 'mwwpf-file-upload' ); ?></th>
+					<td>
+						<code class="mwwpf-storage-path"><?php echo esc_html( $root ); ?></code>
+						<p class="description">
+							<?php
+							echo esc_html(
+								$custom
+									? __( 'Set by MWWPF_STORAGE_DIR in wp-config.php.', 'mwwpf-file-upload' )
+									: __( 'Default location. To change it, set MWWPF_STORAGE_DIR in wp-config.php.', 'mwwpf-file-upload' )
+							);
+							?>
+						</p>
+						<?php if ( MWWPF_Storage::is_configured_dir_rejected() ) : ?>
+							<p class="mwwpf-storage-status--public"><?php echo esc_html( MWWPF_Admin_Notice::rejected_message() ); ?></p>
+						<?php endif; ?>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Access from outside', 'mwwpf-file-upload' ); ?></th>
+					<td>
+						<span class="mwwpf-storage-status mwwpf-storage-status--<?php echo esc_attr( $status ? $status : 'unknown' ); ?>"><?php echo esc_html( $label ); ?></span>
+						<?php if ( $result ) : ?>
+							<p class="description">
+								<?php
+								/* translators: %s: date and time. */
+								echo esc_html( sprintf( __( 'Checked: %s', 'mwwpf-file-upload' ), wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), (int) $result['checked'] ) ) );
+								?>
+							</p>
+						<?php endif; ?>
+						<form method="post" action="<?php echo esc_url( self::url() ); ?>">
+							<?php wp_nonce_field( self::NONCE_ACTION ); ?>
+							<?php submit_button( __( 'Check again', 'mwwpf-file-upload' ), 'secondary small', 'mwwpf_check_storage', false ); ?>
+						</form>
+					</td>
+				</tr>
+				<?php if ( $inside ) : ?>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Move outside the public directory', 'mwwpf-file-upload' ); ?></th>
+						<td>
+							<p><?php esc_html_e( 'The storage is inside the WordPress directory. To keep uploaded files out of reach even if the server configuration changes, add a line like this to wp-config.php (above "That\'s all, stop editing!"):', 'mwwpf-file-upload' ); ?></p>
+							<p><code class="mwwpf-storage-example">define( 'MWWPF_STORAGE_DIR', '<?php echo esc_html( MWWPF_Storage_Check::suggested_dir() ); ?>' );</code></p>
+							<p class="description"><?php esc_html_e( 'Use a directory that is not served by any domain on the server. After changing it, move the "tmp" and "files" folders from the current location to the new one; otherwise files already stored are not listed here.', 'mwwpf-file-upload' ); ?></p>
+						</td>
+					</tr>
+				<?php endif; ?>
+			</table>
+		</div>
+		<?php
+	}
+
+	/**
 	 * Renders the page.
 	 */
 	public static function render() {
@@ -343,6 +434,8 @@ class MWWPF_Admin_Page {
 				?>
 			</p>
 
+			<?php self::render_storage(); ?>
+
 			<form method="post" action="<?php echo esc_url( self::url() ); ?>" class="mwwpf-retention">
 				<?php wp_nonce_field( self::NONCE_ACTION ); ?>
 				<label for="mwwpf-retention-days"><?php esc_html_e( 'Retention period', 'mwwpf-file-upload' ); ?></label>
@@ -378,6 +471,12 @@ class MWWPF_Admin_Page {
 			.mwwpf-attachments .column-size { width: 90px; }
 			.mwwpf-attachments .row-actions .button-link { font-size: 13px; }
 			.mwwpf-attachments .row-actions .delete .button-link { color: #b32d2e; }
+			.mwwpf-attachments .mwwpf-storage { margin: 1em 0; padding: 4px 12px; background: #fff; border: 1px solid #c3c4c7; }
+			.mwwpf-attachments .mwwpf-storage th { padding: 10px 10px 10px 0; width: 180px; }
+			.mwwpf-attachments .mwwpf-storage td { padding: 10px 0; }
+			.mwwpf-attachments .mwwpf-storage code { word-break: break-all; }
+			.mwwpf-attachments .mwwpf-storage-status--public { color: #b32d2e; font-weight: 600; }
+			.mwwpf-attachments .mwwpf-storage-status--protected { color: #007017; }
 		</style>
 		<?php
 	}

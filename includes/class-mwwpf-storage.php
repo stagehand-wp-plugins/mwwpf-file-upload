@@ -81,6 +81,11 @@ class MWWPF_Storage {
 	const PREVIEW_MIMES = array( 'image/png', 'image/jpeg', 'image/gif', 'image/webp' );
 
 	/**
+	 * File name prefix of the test file used to check whether the storage is reachable from outside.
+	 */
+	const PROBE_PREFIX = 'mwwpf-probe-';
+
+	/**
 	 * Visitor ID set during this request (before the browser sends the cookie back).
 	 *
 	 * @var string|null
@@ -93,11 +98,84 @@ class MWWPF_Storage {
 	 * @return string
 	 */
 	public static function root_dir() {
-		if ( defined( 'MWWPF_STORAGE_DIR' ) && is_string( MWWPF_STORAGE_DIR ) && '' !== MWWPF_STORAGE_DIR ) {
-			return untrailingslashit( wp_normalize_path( MWWPF_STORAGE_DIR ) );
+		$configured = self::configured_dir();
+		if ( '' !== $configured && ! self::is_unsafe_dir( $configured ) ) {
+			return $configured;
 		}
+		return self::default_dir();
+	}
+
+	/**
+	 * Returns the default storage root: uploads/mwwpf.
+	 *
+	 * @return string
+	 */
+	public static function default_dir() {
 		$upload_dir = wp_upload_dir( null, false );
 		return untrailingslashit( wp_normalize_path( $upload_dir['basedir'] ) ) . '/mwwpf';
+	}
+
+	/**
+	 * Returns MWWPF_STORAGE_DIR (normalized, without a trailing slash), or '' when it is not set.
+	 *
+	 * @return string
+	 */
+	public static function configured_dir() {
+		if ( defined( 'MWWPF_STORAGE_DIR' ) && is_string( MWWPF_STORAGE_DIR ) && '' !== trim( MWWPF_STORAGE_DIR ) ) {
+			return untrailingslashit( wp_normalize_path( trim( MWWPF_STORAGE_DIR ) ) );
+		}
+		return '';
+	}
+
+	/**
+	 * Whether MWWPF_STORAGE_DIR is set but cannot be used (the default is used instead).
+	 *
+	 * @return bool
+	 */
+	public static function is_configured_dir_rejected() {
+		$configured = self::configured_dir();
+		return '' !== $configured && self::is_unsafe_dir( $configured );
+	}
+
+	/**
+	 * Whether a directory must not be used as the storage root.
+	 *
+	 * The cleanup and the uninstaller delete files under the root, so the root must be a
+	 * dedicated directory: not relative, and not WordPress's own directories or a parent of them.
+	 *
+	 * @param string $dir Directory.
+	 * @return bool
+	 */
+	public static function is_unsafe_dir( $dir ) {
+		$dir = wp_normalize_path( (string) $dir );
+		if ( '' === $dir || ! path_is_absolute( $dir ) || false !== strpos( $dir, '..' ) ) {
+			return true;
+		}
+
+		$upload_dir = wp_upload_dir( null, false );
+		$protected  = array( ABSPATH, WP_CONTENT_DIR, WP_PLUGIN_DIR, WPMU_PLUGIN_DIR, get_theme_root(), $upload_dir['basedir'] );
+		foreach ( $protected as $wp_dir ) {
+			// The root may be inside these (e.g. uploads/mwwpf), but must not be one of them or above them.
+			if ( $wp_dir && self::path_contains( $dir, $wp_dir ) ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Whether $path is $dir itself or inside it. Works for paths that do not exist yet.
+	 *
+	 * @param string $dir  Directory.
+	 * @param string $path Path.
+	 * @return bool
+	 */
+	public static function path_contains( $dir, $path ) {
+		$real_dir  = realpath( $dir );
+		$real_path = realpath( $path );
+		$dir       = trailingslashit( wp_normalize_path( false !== $real_dir ? $real_dir : $dir ) );
+		$path      = trailingslashit( wp_normalize_path( false !== $real_path ? $real_path : $path ) );
+		return 0 === strpos( $path, $dir );
 	}
 
 	/**
@@ -267,7 +345,7 @@ class MWWPF_Storage {
 		if ( ! $moved ) {
 			return new WP_Error( 'storage', __( 'Failed to upload the file.', 'mw-wp-form' ) ); // phpcs:ignore WordPress.WP.I18n.TextDomainMismatch
 		}
-		chmod( $bin, 0640 ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_chmod
+		self::make_private( $bin );
 
 		$meta = array(
 			'form_id'  => (int) $meta['form_id'],
@@ -511,7 +589,31 @@ class MWWPF_Storage {
 	 */
 	private static function write_meta( $path, array $meta ) {
 		$json = wp_json_encode( $meta, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES );
-		return false !== $json && false !== file_put_contents( $path, $json, LOCK_EX ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+		return false !== $json && self::write_private( $path, $json );
+	}
+
+	/**
+	 * Writes a file that only the owner and group can read (0640), like the uploaded files.
+	 *
+	 * @param string $path    Path.
+	 * @param string $content Content.
+	 * @return bool
+	 */
+	public static function write_private( $path, $content ) {
+		if ( false === file_put_contents( $path, $content, LOCK_EX ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+			return false;
+		}
+		self::make_private( $path );
+		return true;
+	}
+
+	/**
+	 * Makes a file readable only by the owner and group (0640).
+	 *
+	 * @param string $path Path.
+	 */
+	public static function make_private( $path ) {
+		@chmod( $path, 0640 ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged,WordPress.WP.AlternativeFunctions.file_system_operations_chmod
 	}
 
 	/**

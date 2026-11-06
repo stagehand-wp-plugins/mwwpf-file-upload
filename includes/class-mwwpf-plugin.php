@@ -58,6 +58,7 @@ final class MWWPF_Plugin {
 	public function boot() {
 		require_once MWWPF_PLUGIN_DIR . 'includes/class-mwwpf-form-scanner.php';
 		require_once MWWPF_PLUGIN_DIR . 'includes/class-mwwpf-storage.php';
+		require_once MWWPF_PLUGIN_DIR . 'includes/class-mwwpf-storage-check.php';
 		require_once MWWPF_PLUGIN_DIR . 'includes/class-mwwpf-ajax.php';
 		require_once MWWPF_PLUGIN_DIR . 'includes/class-mwwpf-cleanup.php';
 		require_once MWWPF_PLUGIN_DIR . 'includes/class-mwwpf-mail.php';

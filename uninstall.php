@@ -13,22 +13,22 @@ require_once __DIR__ . '/includes/class-mwwpf-storage.php';
 
 $mwwpf_root = MWWPF_Storage::root_dir();
 if ( is_dir( $mwwpf_root ) ) {
-	// safe_rmdir() refuses the root itself, so remove its contents first, then the root.
-	foreach ( (array) scandir( $mwwpf_root ) as $mwwpf_item ) {
-		if ( '.' === $mwwpf_item || '..' === $mwwpf_item ) {
-			continue;
-		}
-		$mwwpf_path = $mwwpf_root . '/' . $mwwpf_item;
-		if ( is_dir( $mwwpf_path ) && ! is_link( $mwwpf_path ) ) {
-			MWWPF_Storage::safe_rmdir( $mwwpf_path );
-		} else {
-			MWWPF_Storage::safe_unlink( $mwwpf_path );
-		}
+	// Remove only what this plugin creates, so other files placed in the root by mistake are kept.
+	// safe_rmdir() refuses the root itself, so the root is removed last and only when it is empty.
+	foreach ( array( 'tmp', 'files' ) as $mwwpf_item ) {
+		MWWPF_Storage::safe_rmdir( $mwwpf_root . '/' . $mwwpf_item );
+	}
+	foreach ( array( '.htaccess', 'index.php' ) as $mwwpf_item ) {
+		MWWPF_Storage::safe_unlink( $mwwpf_root . '/' . $mwwpf_item );
+	}
+	foreach ( (array) glob( $mwwpf_root . '/' . MWWPF_Storage::PROBE_PREFIX . '*' ) as $mwwpf_item ) {
+		MWWPF_Storage::safe_unlink( (string) $mwwpf_item );
 	}
 	@rmdir( $mwwpf_root ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged,WordPress.WP.AlternativeFunctions.file_system_operations_rmdir
 }
 
 delete_option( 'mwwpf_retention_days' );
+delete_option( 'mwwpf_storage_check' );
 delete_metadata( 'user', 0, 'mwwpf_attachments_per_page', '', true );
 wp_clear_scheduled_hook( 'mwwpf_cleanup' );
 
