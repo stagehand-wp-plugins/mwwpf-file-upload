@@ -1,6 +1,8 @@
 import { defineConfig, devices } from '@playwright/test';
 
-const baseURL = process.env.WP_BASE_URL ?? 'http://localhost:8889';
+// Paths in the tests are relative (no leading slash), so a trailing slash lets the
+// site live in a subdirectory, e.g. WP_BASE_URL=http://testwp.localhost/7.1.x
+const baseURL = ( process.env.WP_BASE_URL ?? 'http://localhost:8889' ).replace( /\/*$/, '/' );
 
 export default defineConfig( {
 	testDir: './tests/e2e',

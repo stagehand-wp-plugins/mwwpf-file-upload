@@ -1,6 +1,6 @@
 import type { APIRequestContext } from '@playwright/test';
 
-export const ajaxUrl = '/wp-admin/admin-ajax.php';
+export const ajaxUrl = 'wp-admin/admin-ajax.php';
 
 export async function getNonce( request: APIRequestContext ): Promise< string > {
 	const res = await request.get( `${ ajaxUrl }?action=mwwpf_nonce` );

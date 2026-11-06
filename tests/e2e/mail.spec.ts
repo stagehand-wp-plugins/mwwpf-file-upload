@@ -34,7 +34,7 @@ test.describe( 'mail (§9.1)', () => {
 	const toList = ( to: string | string[] ) => ( Array.isArray( to ) ? to : [ to ] ).join( ',' );
 
 	test( 'T1 + T2: admin mail has both files under their original (Japanese) names', async ( { page } ) => {
-		await page.goto( '/mwwpf-test-main/' );
+		await page.goto( 'mwwpf-test-main/' );
 		const form = new FormPage( page );
 		await form.fillName( '山田太郎' );
 		await form.upload( 'attach', quote );
@@ -53,7 +53,7 @@ test.describe( 'mail (§9.1)', () => {
 	} );
 
 	test( 'T5 + T13: without a confirm screen the file is attached; the auto reply has no attachment', async ( { page } ) => {
-		await page.goto( '/mwwpf-test-direct/' );
+		await page.goto( 'mwwpf-test-direct/' );
 		const form = new FormPage( page );
 		await form.fillName( '山田太郎' );
 		await form.form.locator( 'input[name="your-email"]' ).fill( 'visitor@example.com' );
@@ -71,7 +71,7 @@ test.describe( 'mail (§9.1)', () => {
 	} );
 
 	test( 'S6: a tampered file name in the hidden field is ignored', async ( { page } ) => {
-		await page.goto( '/mwwpf-test-main/' );
+		await page.goto( 'mwwpf-test-main/' );
 		const form = new FormPage( page );
 		await form.fillName( '山田太郎' );
 		await form.upload( 'attach', quote );
@@ -90,14 +90,14 @@ test.describe( 'mail (§9.1)', () => {
 		// Another visitor uploads a file.
 		const otherContext = await browser.newContext( { storageState: { cookies: [], origins: [] } } );
 		const otherPage = await otherContext.newPage();
-		await otherPage.goto( '/mwwpf-test-main/' );
+		await otherPage.goto( 'mwwpf-test-main/' );
 		const otherForm = new FormPage( otherPage );
 		await otherForm.upload( 'attach', { ...quote, name: 'secret.pdf' } );
 		const stolen = await otherForm.token( 'attach' ).inputValue();
 		await otherContext.close();
 
 		// This visitor posts that token. The noempty rule rejects it, so the form cannot even be confirmed.
-		await page.goto( '/mwwpf-test-main/' );
+		await page.goto( 'mwwpf-test-main/' );
 		const form = new FormPage( page );
 		await form.fillName( '山田太郎' );
 		await form.token( 'attach' ).evaluate( ( el: HTMLInputElement, value ) => ( el.value = value ), stolen );

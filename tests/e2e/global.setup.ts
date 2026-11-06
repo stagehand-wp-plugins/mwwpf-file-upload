@@ -13,7 +13,7 @@ setup( 'create test forms', async () => {
 } );
 
 setup( 'log in as admin', async ( { page } ) => {
-	await page.goto( '/wp-login.php' );
+	await page.goto( 'wp-login.php' );
 	await page.waitForLoadState( 'load' );
 	// The login page focuses the user field on load; fill and verify both fields before submitting.
 	await expect( async () => {

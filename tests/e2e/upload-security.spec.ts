@@ -85,7 +85,7 @@ test.describe( 'upload endpoints (§9.2)', () => {
 		const res = await upload( visitor, { nonce, formId: main, field: 'attach', name: 'a.pdf', buffer: pdf() } );
 		const token = res.body.data.token;
 		for ( const path of [ `tmp/${ token }.bin`, `tmp/${ token }.json`, 'tmp/', '' ] ) {
-			const direct = await visitor.get( `/wp-content/uploads/mwwpf/${ path }` );
+			const direct = await visitor.get( `wp-content/uploads/mwwpf/${ path }` );
 			expect( [ 403, 404 ], path ).toContain( direct.status() );
 		}
 	} );

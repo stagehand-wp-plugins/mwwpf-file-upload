@@ -6,7 +6,7 @@ import { jpeg, pdf } from './utils/files';
 import { formId } from './utils/forms';
 import { wpCli } from './utils/wp-env';
 
-const adminUrl = '/wp-admin/edit.php?post_type=mw-wp-form&page=mwwpf-attachments';
+const adminUrl = 'wp-admin/edit.php?post_type=mw-wp-form&page=mwwpf-attachments';
 const md5 = ( buf: Buffer ) => crypto.createHash( 'md5' ).update( buf ).digest( 'hex' );
 const unique = () => Date.now().toString( 36 ) + Math.random().toString( 36 ).slice( 2, 6 );
 
@@ -18,7 +18,7 @@ async function send(
 ): Promise< Record< string, string > > {
 	const context = await browser.newContext( { storageState: { cookies: [], origins: [] } } );
 	const page = await context.newPage();
-	await page.goto( `/${ slug }/` );
+	await page.goto( `${ slug }/` );
 	const form = new FormPage( page );
 	await form.fillName( '山田太郎' );
 	const tokens: Record< string, string > = {};
@@ -77,7 +77,7 @@ test.describe( 'stored files (§6.9, §6.14)', () => {
 		const name = `s7-${ unique() }.pdf`;
 		const context = await browser.newContext( { storageState: { cookies: [], origins: [] } } );
 		const page = await context.newPage();
-		await page.goto( '/mwwpf-test-main/' );
+		await page.goto( 'mwwpf-test-main/' );
 		const form = new FormPage( page );
 		await form.fillName( '山田太郎' );
 		await form.upload( 'attach', { name, mimeType: 'application/pdf', buffer: pdf() } );
@@ -86,7 +86,7 @@ test.describe( 'stored files (§6.9, §6.14)', () => {
 		await form.submit();
 
 		// Same browser (same cookie) posts the old token again.
-		await page.goto( '/mwwpf-test-main/' );
+		await page.goto( 'mwwpf-test-main/' );
 		await form.fillName( '山田太郎' );
 		await form.token( 'attach' ).evaluate( ( el: HTMLInputElement, v ) => ( el.value = v ), token );
 		await form.form.locator( 'input[type="hidden"][name="attach"]' ).evaluate( ( el: HTMLInputElement, v ) => ( el.value = v ), name );
@@ -184,7 +184,7 @@ test.describe( 'stored files (§6.9, §6.14)', () => {
 
 		const editor = await browser.newContext( { storageState: { cookies: [], origins: [] } } );
 		const editorPage = await editor.newPage();
-		await editorPage.goto( '/wp-login.php' );
+		await editorPage.goto( 'wp-login.php' );
 		await editorPage.locator( '#user_login' ).fill( 'mwwpf-editor' );
 		await editorPage.locator( '#user_pass' ).fill( 'password' );
 		await editorPage.locator( '#wp-submit' ).click();
@@ -231,7 +231,7 @@ test.describe( 'stored files (§6.9, §6.14)', () => {
 			await page.goto( adminUrl );
 			// Shown both as an admin notice and on the screen.
 			await expect( page.locator( '.mwwpf-storage-warning' ) ).toHaveCount( 2 );
-			await page.goto( '/wp-admin/' );
+			await page.goto( 'wp-admin/' );
 			await expect( page.locator( '.mwwpf-storage-warning' ) ).toHaveCount( 1 );
 
 			wpCli( [ 'config', 'set', 'MWWPF_STORAGE_PROTECTED', 'true', '--raw' ] );
