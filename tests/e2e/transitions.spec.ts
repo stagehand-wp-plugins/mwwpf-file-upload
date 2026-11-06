@@ -12,7 +12,7 @@ test.describe( 'screen transitions (§9.1)', () => {
 	test.use( { storageState: { cookies: [], origins: [] } } );
 
 	test( 'upload shows the file, sets hidden fields, and can be removed', async ( { page } ) => {
-		await page.goto( '/mwwpf-test-main/' );
+		await page.goto( 'mwwpf-test-main/' );
 		const form = new FormPage( page );
 
 		await form.upload( 'attach', quotePdf );
@@ -31,7 +31,7 @@ test.describe( 'screen transitions (§9.1)', () => {
 	} );
 
 	test( 'T7 (client side): a .docx is rejected before upload', async ( { page } ) => {
-		await page.goto( '/mwwpf-test-main/' );
+		await page.goto( 'mwwpf-test-main/' );
 		const form = new FormPage( page );
 		let uploads = 0;
 		page.on( 'request', ( req ) => {
@@ -48,7 +48,7 @@ test.describe( 'screen transitions (§9.1)', () => {
 	} );
 
 	test( 'server-side errors are shown in the field', async ( { page } ) => {
-		await page.goto( '/mwwpf-test-main/' );
+		await page.goto( 'mwwpf-test-main/' );
 		const form = new FormPage( page );
 
 		// Passes the client-side checks (pdf, small), fails the content check on the server.
@@ -59,7 +59,7 @@ test.describe( 'screen transitions (§9.1)', () => {
 	} );
 
 	test( 'T3: back from the confirm screen keeps the upload, and it can be sent', async ( { page } ) => {
-		await page.goto( '/mwwpf-test-main/' );
+		await page.goto( 'mwwpf-test-main/' );
 		const form = new FormPage( page );
 		await form.fillName( '山田太郎' );
 		await form.upload( 'attach', quotePdf );
@@ -83,7 +83,7 @@ test.describe( 'screen transitions (§9.1)', () => {
 	} );
 
 	test( 'T4: an error in another field keeps the upload', async ( { page } ) => {
-		await page.goto( '/mwwpf-test-main/' );
+		await page.goto( 'mwwpf-test-main/' );
 		const form = new FormPage( page );
 		await form.upload( 'attach', quotePdf );
 		const token = await form.token( 'attach' ).inputValue();
@@ -98,7 +98,7 @@ test.describe( 'screen transitions (§9.1)', () => {
 	} );
 
 	test( 'a tampered or foreign token is not shown as uploaded', async ( { page } ) => {
-		await page.goto( '/mwwpf-test-main/' );
+		await page.goto( 'mwwpf-test-main/' );
 		const form = new FormPage( page );
 		await form.fillName( '山田太郎' );
 		await form.upload( 'attach', quotePdf );
@@ -110,7 +110,7 @@ test.describe( 'screen transitions (§9.1)', () => {
 	} );
 
 	test( 'T15: submit buttons are disabled while uploading', async ( { page } ) => {
-		await page.goto( '/mwwpf-test-main/' );
+		await page.goto( 'mwwpf-test-main/' );
 		const form = new FormPage( page );
 
 		let release: () => void = () => {};
@@ -133,7 +133,7 @@ test.describe( 'screen transitions (§9.1)', () => {
 	} );
 
 	test( 'T14: two forms on one page do not interfere', async ( { page } ) => {
-		await page.goto( '/mwwpf-test-two/' );
+		await page.goto( 'mwwpf-test-two/' );
 		const first = new FormPage( page, 0 );
 		const second = new FormPage( page, 1 );
 
@@ -151,7 +151,7 @@ test.describe( 'screen transitions (§9.1)', () => {
 	} );
 
 	test( 'a stale nonce (cached page) is refreshed automatically', async ( { page } ) => {
-		await page.goto( '/mwwpf-test-main/' );
+		await page.goto( 'mwwpf-test-main/' );
 		await page.evaluate( () => ( ( window as any ).mwwpfConfig.nonce = 'stale' ) );
 		const form = new FormPage( page );
 
@@ -163,7 +163,7 @@ test.describe( 'T16: JavaScript disabled', () => {
 	test.use( { javaScriptEnabled: false, storageState: { cookies: [], origins: [] } } );
 
 	test( 'shows the noscript message', async ( { page } ) => {
-		await page.goto( '/mwwpf-test-main/' );
+		await page.goto( 'mwwpf-test-main/' );
 		await expect( page.locator( '.mwwpf[data-mwwpf-field="attach"] .mwwpf__noscript' ) ).toBeVisible();
 	} );
 } );

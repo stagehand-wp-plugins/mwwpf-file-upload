@@ -1,14 +1,20 @@
 import { execFileSync } from 'node:child_process';
 
 /**
- * Runs a WP-CLI command in the wp-env tests container and returns stdout.
+ * Runs a WP-CLI command and returns stdout.
+ *
+ * Uses the wp-env tests container by default. To test another site, set WP_CLI_CMD to the
+ * command that runs WP-CLI there (split on spaces), e.g.
+ * "docker compose -f ../testwp/compose.yaml exec -T -u www-data -w /var/www/html/7.1.x web wp".
  */
 export function wpCli( args: string[] ): string {
-	const out = execFileSync(
-		'npx',
-		[ 'wp-env', 'run', 'tests-cli', 'wp', ...args ],
-		{ encoding: 'utf8', stdio: [ 'ignore', 'pipe', 'pipe' ] }
-	);
+	const [ cmd, ...prefix ] = process.env.WP_CLI_CMD
+		? process.env.WP_CLI_CMD.trim().split( /\s+/ )
+		: [ 'npx', 'wp-env', 'run', 'tests-cli', 'wp' ];
+	const out = execFileSync( cmd, [ ...prefix, ...args ], {
+		encoding: 'utf8',
+		stdio: [ 'ignore', 'pipe', 'pipe' ],
+	} );
 	return out;
 }
 

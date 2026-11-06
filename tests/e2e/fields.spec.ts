@@ -3,7 +3,7 @@ import { formId } from './utils/forms';
 
 test.describe( 'field rendering (Phase 1)', () => {
 	test( '[mwform_file] and [mwform_image] are rendered by this plugin', async ( { page } ) => {
-		await page.goto( '/mwwpf-test-main/' );
+		await page.goto( 'mwwpf-test-main/' );
 		const form = page.locator( '.mw_wp_form form' );
 
 		const attach = form.locator( '.mwwpf[data-mwwpf-field="attach"]' );
@@ -31,15 +31,15 @@ test.describe( 'field rendering (Phase 1)', () => {
 	} );
 
 	test( 'the stylesheet is loaded only on pages with a file field', async ( { page } ) => {
-		await page.goto( '/mwwpf-test-main/' );
+		await page.goto( 'mwwpf-test-main/' );
 		await expect( page.locator( 'link#mwwpf-css' ) ).toHaveCount( 1 );
 
-		await page.goto( '/' );
+		await page.goto( './' );
 		await expect( page.locator( 'link#mwwpf-css' ) ).toHaveCount( 0 );
 	} );
 
 	test( 'tag generator dialog comes from this plugin', async ( { page } ) => {
-		await page.goto( `/wp-admin/post.php?post=${ formId( 'mwwpf-test-main' ) }&action=edit` );
+		await page.goto( `wp-admin/post.php?post=${ formId( 'mwwpf-test-main' ) }&action=edit` );
 
 		const fileDialog = page.locator( '#dialog-mwform_file' );
 		await expect( fileDialog ).toHaveCount( 1 );

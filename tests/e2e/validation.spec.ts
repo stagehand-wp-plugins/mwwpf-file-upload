@@ -36,7 +36,7 @@ test.describe( 'validation (§9.1)', () => {
 	} );
 
 	test( 'an image passes the image rules and is previewed on the confirm screen (F9)', async ( { page } ) => {
-		await page.goto( '/mwwpf-test-main/' );
+		await page.goto( 'mwwpf-test-main/' );
 		const form = new FormPage( page );
 		await form.fillName( '山田太郎' );
 		await form.upload( 'attach', quotePdf );
@@ -53,7 +53,7 @@ test.describe( 'validation (§9.1)', () => {
 	} );
 
 	test( 'T6: removing the file and sending shows the noempty error', async ( { page } ) => {
-		await page.goto( '/mwwpf-test-main/' );
+		await page.goto( 'mwwpf-test-main/' );
 		const form = new FormPage( page );
 		await form.fillName( '山田太郎' );
 		await form.upload( 'attach', quotePdf );
@@ -66,7 +66,7 @@ test.describe( 'validation (§9.1)', () => {
 	} );
 
 	test( 'T7 (server side): filetype is checked again on submit', async ( { page } ) => {
-		await page.goto( '/mwwpf-test-main/' );
+		await page.goto( 'mwwpf-test-main/' );
 		const form = new FormPage( page );
 		await form.fillName( '山田太郎' );
 		await form.upload( 'attach', quotePdf );
@@ -78,7 +78,7 @@ test.describe( 'validation (§9.1)', () => {
 	} );
 
 	test( 'T8 (server side): filesize is checked again on submit', async ( { page } ) => {
-		await page.goto( '/mwwpf-test-main/' );
+		await page.goto( 'mwwpf-test-main/' );
 		const form = new FormPage( page );
 		await form.fillName( '山田太郎' );
 		await form.upload( 'attach', quotePdf );
@@ -90,7 +90,7 @@ test.describe( 'validation (§9.1)', () => {
 	} );
 
 	test( 'T9 (server side): maxfilesize is checked again on submit', async ( { page } ) => {
-		await page.goto( '/mwwpf-test-main/' );
+		await page.goto( 'mwwpf-test-main/' );
 		const form = new FormPage( page );
 		await form.fillName( '山田太郎' );
 		await form.upload( 'attach', quotePdf );
@@ -105,7 +105,7 @@ test.describe( 'validation (§9.1)', () => {
 } );
 
 test( 'F3: the validation settings UI shows the file rules', async ( { page } ) => {
-	await page.goto( `/wp-admin/post.php?post=${ formId( 'mwwpf-test-main' ) }&action=edit` );
+	await page.goto( `wp-admin/post.php?post=${ formId( 'mwwpf-test-main' ) }&action=edit` );
 
 	for ( const [ selector, value ] of [
 		[ 'input[name$="[filetype][types]"]', 'pdf' ],
