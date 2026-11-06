@@ -4,15 +4,15 @@ msgid ""
 msgstr ""
 "Project-Id-Version: File Upload for MW WP Form 0.1.0\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/mwwpf-file-upload\n"
+"POT-Creation-Date: 2026-11-06T17:23:52+09:00\n"
+"PO-Revision-Date: 2026-11-06 14:45+0900\n"
 "Last-Translator: \n"
 "Language-Team: Japanese\n"
 "Language: ja\n"
-"Plural-Forms: nplurals=1; plural=0;\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-11-06T14:42:10+09:00\n"
-"PO-Revision-Date: 2026-11-06 14:45+0900\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: mwwpf-file-upload\n"
 
@@ -26,22 +26,31 @@ msgstr "File Upload for MW WP Form"
 msgid "Adds asynchronous file upload to MW WP Form. Not an official MW WP Form product."
 msgstr "MW WP Form のファイル項目・画像項目を、選択した時点でアップロードする方式に置き換えます。MW WP Form の公式プラグインではありません。"
 
-#: includes/class-mwwpf-admin-notice.php:68
+#: includes/class-mwwpf-admin-notice.php:90
+msgid "The storage for uploaded files can be accessed from outside: a test file placed there was readable over HTTP. Set MWWPF_STORAGE_DIR in wp-config.php to a path outside the document root, or deny access to the storage in the web server configuration."
+msgstr "アップロードされたファイルの保管場所に、外部からアクセスできます（保管場所に置いたテスト用のファイルを、HTTP で読み取れました）。wp-config.php で MWWPF_STORAGE_DIR にドキュメントルート外のパスを指定するか、Web サーバーの設定で保管場所へのアクセスを拒否してください。"
+
+#: includes/class-mwwpf-admin-notice.php:92
 msgid "The storage for uploaded files is inside the public directory, and this server does not apply .htaccess protection. Set MWWPF_STORAGE_DIR in wp-config.php to a path outside the document root, or deny access to the storage in the Nginx configuration."
 msgstr "アップロードされたファイルの保管場所が公開ディレクトリ内にあり、このサーバーでは .htaccess による保護が効きません。wp-config.php で MWWPF_STORAGE_DIR にドキュメントルート外のパスを指定するか、Nginx の設定で保管場所へのアクセスを拒否してください。"
 
-#: includes/class-mwwpf-admin-notice.php:89
+#: includes/class-mwwpf-admin-notice.php:101
+msgid "The path in MWWPF_STORAGE_DIR cannot be used: it must be an absolute path, and must not be a WordPress directory (such as wp-content or uploads) or a parent of one. The default location is used instead."
+msgstr "MWWPF_STORAGE_DIR に指定されたパスは使えません。絶対パスで指定し、WordPress のフォルダ（wp-content や uploads など）やその親フォルダは指定しないでください。現在は既定の場所を使っています。"
+
+#: includes/class-mwwpf-admin-notice.php:123
+#: includes/class-mwwpf-admin-notice.php:132
 msgid "File Upload for MW WP Form:"
 msgstr "File Upload for MW WP Form："
 
-#: includes/class-mwwpf-admin-notice.php:92
-#: includes/class-mwwpf-admin-page.php:315
+#: includes/class-mwwpf-admin-notice.php:135
+#: includes/class-mwwpf-admin-page.php:406
 msgid "How to fix"
 msgstr "対処方法"
 
 #: includes/class-mwwpf-admin-page.php:77
 #: includes/class-mwwpf-admin-page.php:78
-#: includes/class-mwwpf-admin-page.php:311
+#: includes/class-mwwpf-admin-page.php:402
 msgid "Attachments"
 msgstr "添付ファイル"
 
@@ -49,67 +58,119 @@ msgstr "添付ファイル"
 msgid "Sorry, you are not allowed to access this page."
 msgstr "このページにアクセスする権限がありません。"
 
-#: includes/class-mwwpf-admin-page.php:253
+#: includes/class-mwwpf-admin-page.php:264
 msgid "Sorry, you are not allowed to access this file."
 msgstr "このファイルにアクセスする権限がありません。"
 
-#: includes/class-mwwpf-admin-page.php:263
+#: includes/class-mwwpf-admin-page.php:274
 msgid "The link has expired. Please reload the page and try again."
 msgstr "リンクの有効期限が切れました。ページを再読み込みして、もう一度お試しください。"
 
-#: includes/class-mwwpf-admin-page.php:268
-#: includes/class-mwwpf-admin-page.php:287
-#: includes/class-mwwpf-ajax.php:238
+#: includes/class-mwwpf-admin-page.php:279
+#: includes/class-mwwpf-admin-page.php:298 includes/class-mwwpf-ajax.php:238
 msgid "The file was not found."
 msgstr "ファイルが見つかりません。"
 
+#: includes/class-mwwpf-admin-page.php:315
+msgid "Accessible from outside. Uploaded files may be downloaded by anyone."
+msgstr "外部からアクセスできます。アップロードされたファイルを、誰でもダウンロードできるおそれがあります。"
+
+#: includes/class-mwwpf-admin-page.php:318
+msgid "Not accessible from outside (a test file placed there could not be read over HTTP)."
+msgstr "外部からアクセスできません（保管場所に置いたテスト用のファイルを、HTTP で読み取れませんでした）。"
+
+#: includes/class-mwwpf-admin-page.php:321
+msgid "Outside the directories this site serves. Make sure it is not inside the public directory of another domain on the same server."
+msgstr "このサイトの公開ディレクトリの外にあります。同じサーバーにある別のドメインの公開ディレクトリに含まれていないか、確認してください。"
+
+#: includes/class-mwwpf-admin-page.php:324
+msgid "Could not be checked."
+msgstr "確認できませんでした。"
+
+#: includes/class-mwwpf-admin-page.php:333
+msgid "Storage location"
+msgstr "保管場所"
+
+#: includes/class-mwwpf-admin-page.php:340
+msgid "Set by MWWPF_STORAGE_DIR in wp-config.php."
+msgstr "wp-config.php の MWWPF_STORAGE_DIR で指定された場所です。"
+
+#: includes/class-mwwpf-admin-page.php:341
+msgid "Default location. To change it, set MWWPF_STORAGE_DIR in wp-config.php."
+msgstr "既定の場所です。変更するには、wp-config.php で MWWPF_STORAGE_DIR を指定します。"
+
+#: includes/class-mwwpf-admin-page.php:351
+msgid "Access from outside"
+msgstr "外部からのアクセス"
+
+#. translators: %s: date and time.
+#: includes/class-mwwpf-admin-page.php:358
+#, php-format
+msgid "Checked: %s"
+msgstr "確認日時：%s"
+
+#: includes/class-mwwpf-admin-page.php:364
+msgid "Check again"
+msgstr "再確認"
+
+#: includes/class-mwwpf-admin-page.php:370
+msgid "Move outside the public directory"
+msgstr "公開ディレクトリの外へ移す"
+
+#: includes/class-mwwpf-admin-page.php:372
+msgid "The storage is inside the WordPress directory. To keep uploaded files out of reach even if the server configuration changes, add a line like this to wp-config.php (above \"That's all, stop editing!\"):"
+msgstr "保管場所が WordPress のフォルダ内にあります。サーバーの設定が変わってもファイルが公開されないようにするには、wp-config.php の「編集が必要なのはここまでです」の行より上に、次のような1行を追加します。"
+
+#: includes/class-mwwpf-admin-page.php:374
+msgid "Use a directory that is not served by any domain on the server. After changing it, move the \"tmp\" and \"files\" folders from the current location to the new one; otherwise files already stored are not listed here."
+msgstr "サーバー上のどのドメインからも公開されていないフォルダを指定してください。変更したら、今の保管場所にある「tmp」と「files」のフォルダを新しい場所へ移してください。移さないと、保管済みのファイルがこの画面に表示されなくなります。"
+
 #. translators: %d: number of deleted files.
-#: includes/class-mwwpf-admin-page.php:322
+#: includes/class-mwwpf-admin-page.php:413
 #, php-format
 msgid "%d file deleted."
 msgid_plural "%d files deleted."
 msgstr[0] "%d 件のファイルを削除しました。"
 
-#: includes/class-mwwpf-admin-page.php:327
+#: includes/class-mwwpf-admin-page.php:418
 msgid "Settings saved."
 msgstr "設定を保存しました。"
 
-#: includes/class-mwwpf-admin-page.php:330
+#: includes/class-mwwpf-admin-page.php:421
 msgid "Enter a number of days between 0 and 3650."
 msgstr "0〜3650 の日数を入力してください。"
 
 #. translators: 1: number of files, 2: total size.
-#: includes/class-mwwpf-admin-page.php:338
+#: includes/class-mwwpf-admin-page.php:429
 #, php-format
 msgid "Stored files: %1$s (%2$s)"
 msgstr "保管中のファイル：%1$s 件（%2$s）"
 
-#: includes/class-mwwpf-admin-page.php:348
+#: includes/class-mwwpf-admin-page.php:441
 msgid "Retention period"
 msgstr "保存期間"
 
-#: includes/class-mwwpf-admin-page.php:350
+#: includes/class-mwwpf-admin-page.php:443
 msgid "days (0: never delete automatically)"
 msgstr "日（0 にすると自動で削除しません）"
 
-#: includes/class-mwwpf-admin-page.php:351
+#: includes/class-mwwpf-admin-page.php:444
 msgid "Save"
 msgstr "保存"
 
-#: includes/class-mwwpf-admin-page.php:359
+#: includes/class-mwwpf-admin-page.php:452
 msgid "Filter by form"
 msgstr "フォームで絞り込む"
 
-#: includes/class-mwwpf-admin-page.php:361
+#: includes/class-mwwpf-admin-page.php:454
 msgid "All forms"
 msgstr "すべてのフォーム"
 
-#: includes/class-mwwpf-admin-page.php:366
+#: includes/class-mwwpf-admin-page.php:459
 msgid "Filter"
 msgstr "絞り込み"
 
-#: includes/class-mwwpf-ajax.php:93
-#: includes/class-mwwpf-ajax.php:227
+#: includes/class-mwwpf-ajax.php:93 includes/class-mwwpf-ajax.php:227
 msgid "The page has expired. Please reload the page and try again."
 msgstr "ページの有効期限が切れました。ページを再読み込みして、もう一度お試しください。"
 
@@ -202,7 +263,7 @@ msgstr "自動で削除しない"
 msgid "View"
 msgstr "表示"
 
-#: includes/class-mwwpf-plugin.php:151
+#: includes/class-mwwpf-plugin.php:152
 msgid "File Upload for MW WP Form requires MW WP Form to be installed and active."
 msgstr "File Upload for MW WP Form を使うには、MW WP Form をインストールして有効にしてください。"
 

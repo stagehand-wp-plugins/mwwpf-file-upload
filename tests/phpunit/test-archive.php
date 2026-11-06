@@ -43,6 +43,14 @@ class Test_Archive extends WP_UnitTestCase {
 		$_COOKIE[ MWWPF_Storage::COOKIE ] = str_repeat( 'a', 32 );
 		MWWPF_Storage::reset_sid();
 		delete_option( MWWPF_Archive::RETENTION_OPTION );
+		delete_option( MWWPF_Storage_Check::OPTION );
+		// The cleanup also runs the storage check; keep it off the network (it then falls back to the server software).
+		add_filter(
+			'pre_http_request',
+			static function () {
+				return new WP_Error( 'http_request_failed', 'Blocked in tests.' );
+			}
+		);
 	}
 
 	/**

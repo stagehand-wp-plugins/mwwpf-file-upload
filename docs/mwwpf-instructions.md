@@ -226,6 +226,8 @@ mwwpf-file-upload/
 ### 6.4 ストレージ（class-mwwpf-storage.php）
 
 - 保管場所のルート: 定数 `MWWPF_STORAGE_DIR` があればそれを使い、なければ `wp_upload_dir()['basedir'] . '/mwwpf'`。配下に次の2つを作る。
+  - 保管場所は管理画面では変更しない（2026-11-06 の決定）。掃除とアンインストールが配下のファイルを削除するため、管理画面から任意のパスを指定できると、誤設定や管理者アカウントの乗っ取りでサイトのファイルを消すおそれがある。
+  - `MWWPF_STORAGE_DIR` が相対パス、`..` を含む、または `ABSPATH`・`WP_CONTENT_DIR`・`WP_PLUGIN_DIR`・`WPMU_PLUGIN_DIR`・テーマのルート・`uploads` のいずれか自身かその親フォルダの場合は使わず、既定の場所を使う。管理画面の全ページにエラーを出す。
   - `tmp/`: アップロード直後の一時ファイル（未送信）と、メール添付用のコピー（`send-*`）
   - `files/{form_id}/`: 送信済みの保管ファイル（§6.9）
   - ルートと各ディレクトリの作成時に `.htaccess`（`Require all denied` と旧書式 `Deny from all` を併記）と空の `index.php` を置く。
@@ -233,7 +235,11 @@ mwwpf-file-upload/
     ```nginx
     location ^~ /wp-content/uploads/mwwpf/ { deny all; return 404; }
     ```
-- 公開の警告（class-mwwpf-admin-notice.php）: 次の両方を満たすとき、管理者に管理画面の通知（全画面）と「添付ファイル」画面上部の警告を出す。
+- 外部からのアクセスの確認（class-mwwpf-storage-check.php、2026-11-06 追加）: 保管場所のルートにテスト用のファイル（`mwwpf-probe-{ランダム}.txt`）を置き、サイト自身から HTTP で取得して、すぐに削除する。
+  - 結果: 200 で中身が一致 → `public`、401・403・404・410 → `protected`、保管場所がこのサイトの URL の配下にない → `outside`、それ以外（通信エラーなど）→ `unknown`
+  - 結果はオプション `mwwpf_storage_check` に保存し、保管場所が変わるか 1 日たつと再確認する。確認は「添付ファイル」画面を開いたときと、毎時の掃除のときに行う。画面の「再確認」ボタンでも行える。
+  - サイトに Basic 認証がかかっていると 401 になり `protected` と判定される。Basic 認証を外したときは「再確認」を押す（README に記載）。
+- 公開の警告（class-mwwpf-admin-notice.php）: 外部からのアクセスの確認の結果が `public` なら警告を出す。`protected`・`outside` なら出さない。結果がない、または `unknown` のときは、次の両方を満たすとき警告を出す。警告は管理画面の通知（全画面）と「添付ファイル」画面上部に出す。
   - サーバが Nginx（`$_SERVER['SERVER_SOFTWARE']` に `nginx` を含む）、または `.htaccess` を解釈しないサーバ（`apply_filters( 'mwwpf_server_ignores_htaccess', ... )` で判定を上書きできる）
   - 保管場所のルートの `realpath` が `ABSPATH` の `realpath` の配下にある
   - 文言: 「添付ファイルの保管場所が公開ディレクトリ内にあり、このサーバでは .htaccess による保護が効きません。wp-config.php で MWWPF_STORAGE_DIR にドキュメントルート外のパスを指定するか、Nginx の設定で保管場所へのアクセスを拒否してください。」README の該当節へのリンクを付ける。
@@ -354,7 +360,8 @@ REST API ではなく `admin-ajax.php` を使う。未ログインの REST を�
 | `MWWPF_STORAGE_DIR` | 定数 | `uploads/mwwpf` | 保管場所のルート（`tmp/` と `files/`）。公開ディレクトリ外を推奨 |
 | `MWWPF_STORAGE_PROTECTED` | 定数 | なし | true でサーバ側の保護設定済みとみなし、§6.4 の警告を出さない |
 | `mwwpf_retention_days` | オプション | 30 | 保管ファイルの保存期間（日）。0 で自動削除しない。「添付ファイル」画面で変更する |
-| `mwwpf_server_ignores_htaccess` | フィルター | Nginx なら true | §6.4 の警告の判定 |
+| `mwwpf_server_ignores_htaccess` | フィルター | Nginx なら true | §6.4 の警告の判定（外部からのアクセスの確認の結果がないとき） |
+| `mwwpf_storage_check_status` | フィルター | 確認の結果 | §6.4 の警告に使う確認の結果を上書きする（テスト用） |
 | `mwwpf_default_max_bytes` | フィルター | 10MB | filesize 未設定時の上限（§10 Q1 の回答） |
 | `mwwpf_default_exts` | フィルター | file: `pdf,jpg,jpeg,png,gif,webp,heic,doc,docx,xls,xlsx,ppt,pptx,txt,csv,zip` / image: `jpg,jpeg,png,gif,webp` | filetype 未設定時の許可拡張子 |
 | `mwwpf_tmp_ttl` | フィルター | 86400 秒 | 一時ファイルの保持時間 |
@@ -364,7 +371,7 @@ REST API ではなく `admin-ajax.php` を使う。未ログインの REST を�
 
 ### 6.12 アンインストール（uninstall.php）
 
-- 保管場所のルート（`tmp/` と `files/` を含む）を削除し、Cron とオプション・transient を消す。保管ファイルは本プラグイン専用のデータのため一緒に消える。README に「アンインストール前に必要なファイルはダウンロードしておく」と明記する。
+- 保管場所のルートのうち、本プラグインが作るもの（`tmp/`・`files/`・`.htaccess`・`index.php`・テスト用のファイル）だけを削除し、ルートが空になればルートも削除する。ほかのファイルが置かれていても消さない。Cron とオプション（`mwwpf_retention_days`・`mwwpf_storage_check`）・transient を消す。保管ファイルは本プラグイン専用のデータのため一緒に消える。README に「アンインストール前に必要なファイルはダウンロードしておく」と明記する。
 - 本体の問い合わせデータは**消さない**。
 - 無効化だけでは保管ファイルを消さない（Cron の解除のみ）。
 
@@ -401,7 +408,8 @@ REST API ではなく `admin-ajax.php` を使う。未ログインの REST を�
 - 削除（個別・一括）: `admin-post.php` への POST。権限・nonce を確認し、`delete()` を呼ぶ。完了後に件数を通知（`?deleted=n`）して一覧へ戻る。個別削除は確認ダイアログを出す。
 - 保存期間の設定: 一覧の上に「保存期間 [30] 日（0 で自動削除しない）[保存]」のフォーム。0〜3650 の整数。nonce を確認して `mwwpf_retention_days` を更新する。
 - 画面上部に、保管ファイルの件数と合計サイズを表示する。§6.4 の警告条件を満たす場合は、ここにも警告を出す。
-- 全ての出力をエスケープし、パスは画面に出さない。
+- 保管場所の欄（2026-11-06 追加）: 保管場所のパス（既定か `MWWPF_STORAGE_DIR` による指定か）、外部からのアクセスの確認の結果と確認日時、「再確認」ボタンを表示する。保管場所が WordPress のフォルダ内なら、`wp-config.php` に追加する1行の例と、`tmp/`・`files/` を新しい場所へ移す必要があることを表示する。例のパスは PHP の実行ユーザーのホームフォルダ配下（`~/mwwpf-storage/{ホスト名}`）。ホームフォルダが分からないときは `/path/to/private/...` のように仮のパスを示す（WordPress の1つ上のフォルダは、別のドメインの公開ディレクトリのことがあるため例にしない）。
+- 全ての出力をエスケープする。保管場所のパスは管理者にだけ表示する。
 
 ---
 
@@ -480,7 +488,7 @@ REST API ではなく `admin-ajax.php` を使う。未ログインの REST を�
 | T17 | 「添付ファイル」画面でダウンロード・画像プレビュー | 元のファイル名（日本語含む）でダウンロードできる。画像はプレビューされる |
 | T18 | 個別削除、チェックしての一括削除 | 選んだファイルだけが削除され、件数が通知される |
 | T19 | 管理者以外（編集者）・未ログインで画面・ダウンロード URL にアクセス | 拒否される |
-| T20 | Nginx 相当（`mwwpf_server_ignores_htaccess` を true）で保管場所が公開ディレクトリ内 | 管理画面に警告が出る。`MWWPF_STORAGE_PROTECTED` で消える |
+| T20 | 外部からのアクセスの確認が `public`（テストでは `mwwpf_storage_check_status` で上書き）、または Nginx 相当（`mwwpf_server_ignores_htaccess` を true）で保管場所が公開ディレクトリ内 | 管理画面に警告が出る。`MWWPF_STORAGE_PROTECTED` で消える。確認が `protected` なら Nginx でも出ない |
 | T13 | 自動返信メール | 添付されない |
 | T14 | 1ページに2フォーム | 互いに干渉しない |
 | T15 | アップロード中に送信ボタン | 押せない |
