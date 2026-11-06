@@ -1,6 +1,6 @@
 {
 	"name": "mwwpf-file-upload",
-	"version": "0.1.0",
+	"version": "1.0.0",
 	"private": true,
 	"description": "File Upload for MW WP Form",
 	"license": "GPL-2.0-or-later",
