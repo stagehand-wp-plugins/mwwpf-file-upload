@@ -345,7 +345,7 @@ class MWWPF_Storage {
 		if ( ! $moved ) {
 			return new WP_Error( 'storage', __( 'Failed to upload the file.', 'mw-wp-form' ) ); // phpcs:ignore WordPress.WP.I18n.TextDomainMismatch
 		}
-		chmod( $bin, 0640 ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_chmod
+		self::make_private( $bin );
 
 		$meta = array(
 			'form_id'  => (int) $meta['form_id'],
@@ -589,7 +589,31 @@ class MWWPF_Storage {
 	 */
 	private static function write_meta( $path, array $meta ) {
 		$json = wp_json_encode( $meta, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES );
-		return false !== $json && false !== file_put_contents( $path, $json, LOCK_EX ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+		return false !== $json && self::write_private( $path, $json );
+	}
+
+	/**
+	 * Writes a file that only the owner and group can read (0640), like the uploaded files.
+	 *
+	 * @param string $path    Path.
+	 * @param string $content Content.
+	 * @return bool
+	 */
+	public static function write_private( $path, $content ) {
+		if ( false === file_put_contents( $path, $content, LOCK_EX ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+			return false;
+		}
+		self::make_private( $path );
+		return true;
+	}
+
+	/**
+	 * Makes a file readable only by the owner and group (0640).
+	 *
+	 * @param string $path Path.
+	 */
+	public static function make_private( $path ) {
+		@chmod( $path, 0640 ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged,WordPress.WP.AlternativeFunctions.file_system_operations_chmod
 	}
 
 	/**

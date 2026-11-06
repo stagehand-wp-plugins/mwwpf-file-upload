@@ -129,6 +129,9 @@ class Test_Archive extends WP_UnitTestCase {
 	public function test_send_moves_files_and_consumes_tokens() {
 		$attach = $this->upload( 'attach', '見積.pdf' );
 		$photo  = $this->upload( 'photo', 'p.pdf' );
+		foreach ( array( 'bin', 'json' ) as $ext ) {
+			$this->assertSame( '0640', substr( sprintf( '%o', fileperms( MWWPF_Storage::tmp_path( $attach, $ext ) ) ), -4 ), "tmp {$ext}" );
+		}
 
 		$items = $this->send(
 			array(
@@ -146,6 +149,11 @@ class Test_Archive extends WP_UnitTestCase {
 			$this->assertFileExists( MWWPF_Storage::root_dir() . '/files/' . $this->form_id . '/' . $token . '.bin' );
 			// S7: the token cannot be used again.
 			$this->assertNull( MWWPF_Storage::resolve( $token, $this->form_id, 'attach' ) );
+		}
+
+		// The files contain personal data (file names, contents); they are not readable by other users.
+		foreach ( array( 'bin', 'json' ) as $ext ) {
+			$this->assertSame( '0640', substr( sprintf( '%o', fileperms( MWWPF_Archive::path( $this->form_id, $attach, $ext ) ) ), -4 ), "archived {$ext}" );
 		}
 
 		$meta = MWWPF_Archive::read( $this->form_id, $attach );
