@@ -48,6 +48,8 @@ function countAttachments(): number {
 
 test.describe( 'stored files (§6.9, §6.14)', () => {
 	test( 'T10 + T11: sent files are stored, listed, and not in the media library', async ( { page, browser } ) => {
+		// Eight WP-CLI calls; through wp-env each takes about 3 seconds, close to the default 30-second limit.
+		test.slow();
 		const id = unique();
 		const mediaBefore = countAttachments();
 		const offName = `off-${ id }.pdf`;
@@ -247,6 +249,22 @@ test.describe( 'stored files (§6.9, §6.14)', () => {
 			} catch {
 				// Not set.
 			}
+		}
+	} );
+
+	test( "MW WP Form's deprecation notice for the file fields is hidden", async ( { page } ) => {
+		const notice = page.locator( '.notice', { hasText: '[mwform_file]' } );
+		await page.goto( 'wp-admin/' );
+		await expect( page.locator( '#wpbody-content' ) ).toBeVisible();
+		await expect( notice ).toHaveCount( 0 );
+
+		// The filter brings it back (it is MW WP Form's own notice, not removed from its files).
+		wpCli( [ 'option', 'update', 'mwwpf_test_show_deprecation', '1' ] );
+		try {
+			await page.goto( 'wp-admin/' );
+			await expect( notice ).toHaveCount( 1 );
+		} finally {
+			wpCli( [ 'option', 'delete', 'mwwpf_test_show_deprecation' ] );
 		}
 	} );
 } );

@@ -59,7 +59,10 @@ class MWWPF_Cleanup {
 	 * @return int Number of deleted files.
 	 */
 	public static function run() {
-		return self::clean_tmp() + MWWPF_Archive::clean();
+		$deleted = self::clean_tmp() + MWWPF_Archive::clean();
+		// Keeps the storage check fresh, so the warning appears on every admin page without a visit to the list.
+		MWWPF_Storage_Check::maybe_run();
+		return $deleted;
 	}
 
 	/**

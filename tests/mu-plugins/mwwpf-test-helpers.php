@@ -89,9 +89,24 @@ add_filter(
 );
 
 // Lets the E2E tests simulate a server that ignores .htaccess (Nginx): wp option update mwwpf_test_ignores_htaccess 1.
+// Both the HTTP check result and the fallback (server software) are overridden.
 add_filter(
 	'mwwpf_server_ignores_htaccess',
 	static function ( $ignores ) {
 		return get_option( 'mwwpf_test_ignores_htaccess' ) ? true : $ignores;
+	}
+);
+add_filter(
+	'mwwpf_storage_check_status',
+	static function ( $status ) {
+		return get_option( 'mwwpf_test_ignores_htaccess' ) ? 'public' : $status;
+	}
+);
+
+// Lets the E2E tests show MW WP Form's deprecation notice again: wp option update mwwpf_test_show_deprecation 1.
+add_filter(
+	'mwwpf_hide_deprecation_notice',
+	static function ( $hide ) {
+		return get_option( 'mwwpf_test_show_deprecation' ) ? false : $hide;
 	}
 );
