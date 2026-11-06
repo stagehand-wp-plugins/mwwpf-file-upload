@@ -62,7 +62,6 @@ MW WP Form 5.2（2026年中にリリース予定）で `[mwform_file]` と `[mwf
 
 - 1項目で複数ファイルを受け付けること（本体と同じく1項目1ファイル）
 - 本体で過去に保存された問い合わせデータ・添付の移行（本体の形式のまま残るので不要）
-- 本体の削除予告（admin notice）を消すこと
 - 添付ファイルのメディアライブラリへの登録と、本体の問い合わせデータ画面（一覧・詳細・CSV）での添付表示（2026-10-20 の決定でスコープ外。問い合わせデータにはファイル名だけが残る）
 - 本体フック `mwform_upload_dir_{form_key}` / `mwform_upload_filename_{form_key}` の適用（本体では DB保存時のメディア登録にだけ使われるフックのため）
 
@@ -368,6 +367,12 @@ REST API ではなく `admin-ajax.php` を使う。未ログインの REST を�
 | `mwwpf_rate_limit` | フィルター | `[ 30, 600 ]` | 回数と秒数 |
 | `mwwpf_tmp_quota_bytes` | フィルター | 500MB | 一時保存先の合計上限 |
 | `mwwpf_form_fields` | フィルター | — | §6.2 |
+
+### 6.11.1 本体の削除予告（2026-11-06 の決定）
+
+- 本プラグインが有効なとき、MW WP Form の削除予告（`[mwform_file]` と `[mwform_image]` が 5.2 で削除される旨の admin notice）を表示しない。本プラグインで 5.2 以降も動くため。
+- `admin_notices` の優先度 0 で、`MW_WP_Form_Deprecation_Notice_Controller` のコールバックを外す。本体のファイルは変更しない。本体側でクラス名が変わった場合は何もしない。
+- フィルター `mwwpf_hide_deprecation_notice`（既定 true）で表示に戻せる。
 
 ### 6.12 アンインストール（uninstall.php）
 
