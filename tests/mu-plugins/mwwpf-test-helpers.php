@@ -102,3 +102,11 @@ add_filter(
 		return get_option( 'mwwpf_test_ignores_htaccess' ) ? 'public' : $status;
 	}
 );
+
+// Lets the E2E tests show MW WP Form's deprecation notice again: wp option update mwwpf_test_show_deprecation 1.
+add_filter(
+	'mwwpf_hide_deprecation_notice',
+	static function ( $hide ) {
+		return get_option( 'mwwpf_test_show_deprecation' ) ? false : $hide;
+	}
+);

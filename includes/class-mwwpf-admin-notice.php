@@ -17,6 +17,39 @@ class MWWPF_Admin_Notice {
 	 */
 	public static function register() {
 		add_action( 'admin_notices', array( __CLASS__, 'render' ) );
+		// Runs before MW WP Form's notice (priority 10) so it can be removed for this request.
+		add_action( 'admin_notices', array( __CLASS__, 'hide_deprecation_notice' ), 0 );
+	}
+
+	/**
+	 * Removes MW WP Form's notice that [mwform_file] and [mwform_image] will be removed in 5.2.
+	 *
+	 * This plugin keeps those fields working after 5.2, so the notice no longer applies.
+	 * MW WP Form's files are not changed: deactivating this plugin shows the notice again.
+	 * When MW WP Form changes or drops the notice class, nothing is removed.
+	 */
+	public static function hide_deprecation_notice() {
+		/**
+		 * Filters whether to hide MW WP Form's deprecation notice for [mwform_file] and [mwform_image].
+		 *
+		 * @param bool $hide Default true.
+		 */
+		if ( ! apply_filters( 'mwwpf_hide_deprecation_notice', true ) ) {
+			return;
+		}
+
+		global $wp_filter;
+		if ( empty( $wp_filter['admin_notices'] ) || ! $wp_filter['admin_notices'] instanceof WP_Hook ) {
+			return;
+		}
+		foreach ( $wp_filter['admin_notices']->callbacks as $priority => $callbacks ) {
+			foreach ( $callbacks as $callback ) {
+				$function = $callback['function'];
+				if ( is_array( $function ) && is_object( $function[0] ) && is_a( $function[0], 'MW_WP_Form_Deprecation_Notice_Controller' ) ) {
+					remove_action( 'admin_notices', $function, $priority );
+				}
+			}
+		}
 	}
 
 	/**
