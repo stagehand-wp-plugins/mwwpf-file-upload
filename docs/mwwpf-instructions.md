@@ -399,6 +399,8 @@ REST API ではなく `admin-ajax.php` を使う。未ログインの REST を�
 - 更新の判定は最新の GitHub Release を使う。GitHub が自動生成するソース zip ではなく、`release.yml`（環境準備 §12）が添付する `mwwpf-file-upload.zip` を配布物にする。
 - 自動更新はプラグイン側で強制しない。各サイトのプラグイン一覧の「自動更新を有効化」で切り替える（WordPress 標準の機能）。
 - 非公開リポジトリ用のトークンは設定しない（公開リポジトリが前提）。
+- プレリリース（`v1.1.0-rc.1` のようなタグ。`release.yml` が GitHub のプレリリースにする）は、既定では通知しない。`wp-config.php` に `define( 'MWWPF_UPDATE_PRERELEASES', true );` を書いたサイト（ステージングなど）にだけ通知する。
+- 初期化は `includes/class-mwwpf-updater.php` の `MWWPF_Updater::register()` で行う。ライブラリの名前空間にはマイナーバージョン（`v5p7` など）が入るため、`PucFactory` 以外のクラス名を直接書かない。
 - `vendor/autoload.php` がない場合（開発中に `composer install` 前など）は、更新チェックだけを無効にしてプラグイン本体は動かす。
 
 ### 6.14 管理画面「添付ファイル」（class-mwwpf-admin-page.php）
@@ -528,7 +530,7 @@ REST API ではなく `admin-ajax.php` を使う。未ログインの REST を�
 
 ### 9.5 更新配信テスト
 
-テスト用のプレリリース（例: `v0.9.0` → `v0.9.1`）で、ステージングサイトを使って確認する。
+テスト用のプレリリース（例: `v0.9.0-rc.1` → `v0.9.1-rc.1`）で、`MWWPF_UPDATE_PRERELEASES` を有効にしたステージングサイトを使って確認する。`release.yml` はタグの `-` より前とヘッダーの Version が一致することを求めるため、2つのタグはヘッダーの Version から変える（`0.9.0-rc.1` → `0.9.0-rc.2` は `0.9.0` 同士の比較になり、更新として扱われない）。
 
 | # | 確認内容 | 期待結果 |
 |---|---|---|
