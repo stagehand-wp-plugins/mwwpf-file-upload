@@ -1,0 +1,219 @@
+# Copyright (C) 2026 
+# This file is distributed under the GPL-2.0-or-later.
+msgid ""
+msgstr ""
+"Project-Id-Version: File Upload for MW WP Form 0.1.0\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/mwwpf-file-upload\n"
+"Last-Translator: \n"
+"Language-Team: Japanese\n"
+"Language: ja\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2026-11-06T14:42:10+09:00\n"
+"PO-Revision-Date: 2026-11-06 14:45+0900\n"
+"X-Generator: WP-CLI 2.12.0\n"
+"X-Domain: mwwpf-file-upload\n"
+
+#. Plugin Name of the plugin
+#: mwwpf-file-upload.php
+msgid "File Upload for MW WP Form"
+msgstr "File Upload for MW WP Form"
+
+#. Description of the plugin
+#: mwwpf-file-upload.php
+msgid "Adds asynchronous file upload to MW WP Form. Not an official MW WP Form product."
+msgstr "MW WP Form のファイル項目・画像項目を、選択した時点でアップロードする方式に置き換えます。MW WP Form の公式プラグインではありません。"
+
+#: includes/class-mwwpf-admin-notice.php:68
+msgid "The storage for uploaded files is inside the public directory, and this server does not apply .htaccess protection. Set MWWPF_STORAGE_DIR in wp-config.php to a path outside the document root, or deny access to the storage in the Nginx configuration."
+msgstr "アップロードされたファイルの保管場所が公開ディレクトリ内にあり、このサーバーでは .htaccess による保護が効きません。wp-config.php で MWWPF_STORAGE_DIR にドキュメントルート外のパスを指定するか、Nginx の設定で保管場所へのアクセスを拒否してください。"
+
+#: includes/class-mwwpf-admin-notice.php:89
+msgid "File Upload for MW WP Form:"
+msgstr "File Upload for MW WP Form："
+
+#: includes/class-mwwpf-admin-notice.php:92
+#: includes/class-mwwpf-admin-page.php:315
+msgid "How to fix"
+msgstr "対処方法"
+
+#: includes/class-mwwpf-admin-page.php:77
+#: includes/class-mwwpf-admin-page.php:78
+#: includes/class-mwwpf-admin-page.php:311
+msgid "Attachments"
+msgstr "添付ファイル"
+
+#: includes/class-mwwpf-admin-page.php:105
+msgid "Sorry, you are not allowed to access this page."
+msgstr "このページにアクセスする権限がありません。"
+
+#: includes/class-mwwpf-admin-page.php:253
+msgid "Sorry, you are not allowed to access this file."
+msgstr "このファイルにアクセスする権限がありません。"
+
+#: includes/class-mwwpf-admin-page.php:263
+msgid "The link has expired. Please reload the page and try again."
+msgstr "リンクの有効期限が切れました。ページを再読み込みして、もう一度お試しください。"
+
+#: includes/class-mwwpf-admin-page.php:268
+#: includes/class-mwwpf-admin-page.php:287
+#: includes/class-mwwpf-ajax.php:238
+msgid "The file was not found."
+msgstr "ファイルが見つかりません。"
+
+#. translators: %d: number of deleted files.
+#: includes/class-mwwpf-admin-page.php:322
+#, php-format
+msgid "%d file deleted."
+msgid_plural "%d files deleted."
+msgstr[0] "%d 件のファイルを削除しました。"
+
+#: includes/class-mwwpf-admin-page.php:327
+msgid "Settings saved."
+msgstr "設定を保存しました。"
+
+#: includes/class-mwwpf-admin-page.php:330
+msgid "Enter a number of days between 0 and 3650."
+msgstr "0〜3650 の日数を入力してください。"
+
+#. translators: 1: number of files, 2: total size.
+#: includes/class-mwwpf-admin-page.php:338
+#, php-format
+msgid "Stored files: %1$s (%2$s)"
+msgstr "保管中のファイル：%1$s 件（%2$s）"
+
+#: includes/class-mwwpf-admin-page.php:348
+msgid "Retention period"
+msgstr "保存期間"
+
+#: includes/class-mwwpf-admin-page.php:350
+msgid "days (0: never delete automatically)"
+msgstr "日（0 にすると自動で削除しません）"
+
+#: includes/class-mwwpf-admin-page.php:351
+msgid "Save"
+msgstr "保存"
+
+#: includes/class-mwwpf-admin-page.php:359
+msgid "Filter by form"
+msgstr "フォームで絞り込む"
+
+#: includes/class-mwwpf-admin-page.php:361
+msgid "All forms"
+msgstr "すべてのフォーム"
+
+#: includes/class-mwwpf-admin-page.php:366
+msgid "Filter"
+msgstr "絞り込み"
+
+#: includes/class-mwwpf-ajax.php:93
+#: includes/class-mwwpf-ajax.php:227
+msgid "The page has expired. Please reload the page and try again."
+msgstr "ページの有効期限が切れました。ページを再読み込みして、もう一度お試しください。"
+
+#: includes/class-mwwpf-ajax.php:105
+msgid "Too many uploads. Please wait a while and try again."
+msgstr "アップロードの回数が多すぎます。しばらく待ってから、もう一度お試しください。"
+
+#: includes/class-mwwpf-ajax.php:116
+msgid "The server cannot accept files right now. Please try again later."
+msgstr "現在、サーバーがファイルを受け付けられません。時間をおいて、もう一度お試しください。"
+
+#: includes/class-mwwpf-list-table.php:40
+msgid "Preview"
+msgstr "プレビュー"
+
+#: includes/class-mwwpf-list-table.php:41
+msgid "File name"
+msgstr "ファイル名"
+
+#: includes/class-mwwpf-list-table.php:42
+msgid "Form"
+msgstr "フォーム"
+
+#: includes/class-mwwpf-list-table.php:43
+msgid "Field"
+msgstr "項目"
+
+#: includes/class-mwwpf-list-table.php:44
+msgid "Size"
+msgstr "サイズ"
+
+#: includes/class-mwwpf-list-table.php:45
+msgid "Type"
+msgstr "種類"
+
+#: includes/class-mwwpf-list-table.php:46
+msgid "Received"
+msgstr "受信日時"
+
+#: includes/class-mwwpf-list-table.php:47
+msgid "Deleted on"
+msgstr "削除予定日"
+
+#: includes/class-mwwpf-list-table.php:48
+msgid "Inquiry data"
+msgstr "問い合わせデータ"
+
+#: includes/class-mwwpf-list-table.php:58
+#: includes/class-mwwpf-list-table.php:157
+msgid "Delete"
+msgstr "削除"
+
+#: includes/class-mwwpf-list-table.php:91
+msgid "No stored files."
+msgstr "保管中のファイルはありません。"
+
+#. translators: %s: file name.
+#: includes/class-mwwpf-list-table.php:115
+#, php-format
+msgid "Select %s"
+msgstr "%s を選択"
+
+#: includes/class-mwwpf-list-table.php:148
+msgid "Download"
+msgstr "ダウンロード"
+
+#. translators: %s: file name.
+#: includes/class-mwwpf-list-table.php:155
+#, php-format
+msgid "Delete \"%s\"? This cannot be undone."
+msgstr "「%s」を削除しますか？ この操作は取り消せません。"
+
+#. translators: %d: form ID.
+#: includes/class-mwwpf-list-table.php:191
+#, php-format
+msgid "Deleted form #%d"
+msgstr "削除されたフォーム #%d"
+
+#. translators: %d: form ID.
+#: includes/class-mwwpf-list-table.php:195
+#, php-format
+msgid "Form #%d"
+msgstr "フォーム #%d"
+
+#: includes/class-mwwpf-list-table.php:246
+msgid "Not deleted automatically"
+msgstr "自動で削除しない"
+
+#: includes/class-mwwpf-list-table.php:261
+msgid "View"
+msgstr "表示"
+
+#: includes/class-mwwpf-plugin.php:151
+msgid "File Upload for MW WP Form requires MW WP Form to be installed and active."
+msgstr "File Upload for MW WP Form を使うには、MW WP Form をインストールして有効にしてください。"
+
+#: includes/fields/class-mwwpf-field-file.php:108
+msgid "Please enable JavaScript to upload files."
+msgstr "ファイルをアップロードするには、JavaScript を有効にしてください。"
+
+#: includes/fields/class-mwwpf-field-file.php:172
+msgid "Example: .pdf,image/*"
+msgstr "例：.pdf,image/*"
+
+#: includes/fields/class-mwwpf-field-file.php:231
+msgid "Remove"
+msgstr "削除"
